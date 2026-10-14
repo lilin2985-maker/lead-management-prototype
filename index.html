@@ -1,0 +1,5928 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111827">
+  <title>线索管理系统原型</title>
+  <style>
+    :root {
+      --ink: #182033;
+      --ink-2: #344054;
+      --muted: #667085;
+      --muted-2: #98a2b3;
+      --line: #e3e8ef;
+      --line-strong: #d0d7e2;
+      --canvas: #f3f5f8;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --sidebar: #111827;
+      --sidebar-2: #182235;
+      --brand: #3568f2;
+      --brand-dark: #2452cf;
+      --brand-soft: #edf2ff;
+      --green: #0e9f6e;
+      --green-soft: #eafaf4;
+      --amber: #c96a09;
+      --amber-soft: #fff5e6;
+      --red: #d92d20;
+      --red-soft: #fff0ee;
+      --cyan: #0f7490;
+      --cyan-soft: #eaf7fa;
+      --shadow-sm: 0 1px 2px rgba(16, 24, 40, .04);
+      --shadow-md: 0 10px 30px rgba(16, 24, 40, .12);
+      --shadow-lg: 0 24px 64px rgba(16, 24, 40, .22);
+      --radius: 8px;
+      --sidebar-width: 248px;
+      --topbar-height: 62px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      color: var(--ink);
+      background: var(--canvas);
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      letter-spacing: 0;
+      overflow: hidden;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+      letter-spacing: 0;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .48;
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex: none;
+    }
+
+    .app {
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      position: relative;
+      z-index: 40;
+      width: var(--sidebar-width);
+      flex: none;
+      display: flex;
+      flex-direction: column;
+      color: #e5e7eb;
+      background: var(--sidebar);
+      border-right: 1px solid rgba(255, 255, 255, .04);
+      transition: transform .24s ease, width .24s ease;
+    }
+
+    .brand {
+      height: var(--topbar-height);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      border-bottom: 1px solid rgba(255, 255, 255, .07);
+      white-space: nowrap;
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      color: #9ff3d0;
+      background: rgba(14, 159, 110, .12);
+      border: 1px solid rgba(159, 243, 208, .22);
+      border-radius: 7px;
+    }
+
+    .brand-mark svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.2;
+    }
+
+    .brand-copy strong {
+      display: block;
+      color: #f8fafc;
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .brand-copy span {
+      display: block;
+      margin-top: 1px;
+      color: #8f9bad;
+      font-size: 10px;
+    }
+
+    .nav-scroll {
+      flex: 1;
+      min-height: 0;
+      padding: 14px 12px 22px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #364154 transparent;
+    }
+
+    .nav-group + .nav-group {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, .055);
+    }
+
+    .nav-label {
+      padding: 0 10px 7px;
+      color: #748094;
+      font-size: 10px;
+      font-weight: 650;
+      text-transform: uppercase;
+    }
+
+    .nav-item,
+    .nav-child {
+      width: 100%;
+      border: 0;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      color: #aeb8c8;
+      background: transparent;
+      text-align: left;
+      border-radius: 7px;
+      transition: color .16s ease, background .16s ease;
+    }
+
+    .nav-item {
+      height: 42px;
+      padding: 0 11px;
+    }
+
+    .nav-item:hover,
+    .nav-child:hover {
+      color: #f8fafc;
+      background: rgba(255, 255, 255, .055);
+    }
+
+    .nav-item.active {
+      color: #ffffff;
+      background: var(--sidebar-2);
+    }
+
+    .nav-item.active svg {
+      color: #86a9ff;
+    }
+
+    .nav-item svg {
+      color: #7f8a9c;
+    }
+
+    .nav-chevron {
+      margin-left: auto;
+      width: 15px;
+      height: 15px;
+      transition: transform .16s ease;
+    }
+
+    .nav-item.open .nav-chevron {
+      transform: rotate(180deg);
+    }
+
+    .nav-children {
+      display: none;
+      margin: 2px 0 4px 32px;
+      padding-left: 10px;
+      border-left: 1px solid rgba(255, 255, 255, .10);
+    }
+
+    .nav-children.open {
+      display: block;
+    }
+
+    .nav-child {
+      position: relative;
+      height: 34px;
+      padding: 0 10px;
+      font-size: 13px;
+    }
+
+    .nav-child.active {
+      color: #ffffff;
+      font-weight: 650;
+    }
+
+    .nav-child.active::before {
+      content: "";
+      position: absolute;
+      left: -11px;
+      width: 2px;
+      height: 18px;
+      background: #6d96ff;
+      border-radius: 2px;
+    }
+
+    .sidebar-footer {
+      padding: 14px;
+      border-top: 1px solid rgba(255, 255, 255, .07);
+    }
+
+    .sidebar-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      background: rgba(255, 255, 255, .035);
+      border: 1px solid rgba(255, 255, 255, .065);
+      border-radius: 7px;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      flex: none;
+      color: #2442a1;
+      background: #dbe5ff;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .sidebar-user-copy {
+      min-width: 0;
+    }
+
+    .sidebar-user-copy strong {
+      display: block;
+      overflow: hidden;
+      color: #f8fafc;
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sidebar-user-copy span {
+      display: block;
+      color: #818c9d;
+      font-size: 10px;
+    }
+
+    .workspace {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      position: relative;
+      z-index: 30;
+      height: var(--topbar-height);
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 0 22px;
+      background: rgba(255, 255, 255, .96);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+    }
+
+    .topbar-left,
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .mobile-menu {
+      display: none !important;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .breadcrumbs strong {
+      color: var(--ink);
+      font-weight: 650;
+    }
+
+    .breadcrumbs svg {
+      width: 13px;
+      height: 13px;
+      color: #b0b8c5;
+    }
+
+    .topbar-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--line);
+    }
+
+    .role-switch {
+      display: flex;
+      align-items: center;
+      padding: 3px;
+      background: #f2f4f7;
+      border: 1px solid #e4e7ec;
+      border-radius: 7px;
+    }
+
+    .role-switch button {
+      height: 28px;
+      padding: 0 11px;
+      border: 0;
+      color: var(--muted);
+      background: transparent;
+      border-radius: 5px;
+      font-size: 12px;
+    }
+
+    .role-switch button.active {
+      color: var(--ink);
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(16, 24, 40, .12);
+      font-weight: 650;
+    }
+
+    .icon-button {
+      position: relative;
+      width: 34px;
+      height: 34px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0;
+      color: var(--muted);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      transition: color .16s ease, border-color .16s ease, background .16s ease;
+    }
+
+    .icon-button:hover {
+      color: var(--brand);
+      border-color: #bfcffb;
+      background: #f8faff;
+    }
+
+    .icon-button::after,
+    [data-tooltip]::after {
+      position: absolute;
+      z-index: 120;
+      left: 50%;
+      bottom: calc(100% + 8px);
+      padding: 5px 7px;
+      color: #fff;
+      background: #182033;
+      border-radius: 5px;
+      box-shadow: var(--shadow-md);
+      content: attr(data-tooltip);
+      font-size: 11px;
+      line-height: 1.2;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, 4px);
+      transition: opacity .14s ease, transform .14s ease;
+      white-space: nowrap;
+    }
+
+    .icon-button:hover::after,
+    [data-tooltip]:hover::after {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .screen {
+      position: relative;
+      min-height: 0;
+      flex: 1;
+      overflow: auto;
+      padding: 22px;
+      scrollbar-width: thin;
+      scrollbar-color: #c9d0dc transparent;
+    }
+
+    .page {
+      display: none;
+      max-width: 1760px;
+      margin: 0 auto;
+      animation: page-in .26s ease both;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes page-in {
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .page-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 16px;
+    }
+
+    .eyebrow {
+      margin-bottom: 5px;
+      color: var(--brand);
+      font-size: 10px;
+      font-weight: 750;
+      text-transform: uppercase;
+    }
+
+    .page-head h1 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 24px;
+      line-height: 1.25;
+      font-weight: 720;
+    }
+
+    .page-head p {
+      display: none;
+    }
+
+    .list-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin: -2px 0 14px;
+      padding: 4px;
+      width: fit-content;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .list-tab {
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 13px;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .list-tab.active {
+      color: #fff;
+      background: var(--brand);
+    }
+
+    .list-tab-count {
+      min-width: 19px;
+      height: 19px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0 5px;
+      color: inherit;
+      background: rgba(102, 112, 133, .12);
+      border-radius: 999px;
+      font-size: 10px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .list-tab.active .list-tab-count {
+      background: rgba(255, 255, 255, .2);
+    }
+
+    .page-actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding-top: 5px;
+    }
+
+    .btn {
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 13px;
+      color: var(--ink-2);
+      background: #fff;
+      border: 1px solid var(--line-strong);
+      border-radius: 7px;
+      box-shadow: var(--shadow-sm);
+      font-size: 13px;
+      font-weight: 620;
+      white-space: nowrap;
+      transition: border-color .16s ease, color .16s ease, background .16s ease, transform .16s ease;
+    }
+
+    .btn:hover {
+      color: var(--brand);
+      border-color: #b8cafb;
+      background: #f9fbff;
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn.primary {
+      color: #fff;
+      background: var(--brand);
+      border-color: var(--brand);
+      box-shadow: 0 2px 5px rgba(53, 104, 242, .22);
+    }
+
+    .btn.primary:hover {
+      color: #fff;
+      background: var(--brand-dark);
+      border-color: var(--brand-dark);
+    }
+
+    .btn.danger {
+      color: var(--red);
+      border-color: #f3b6b0;
+    }
+
+    .btn.ghost {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+    }
+
+    .btn.small {
+      height: 30px;
+      padding: 0 10px;
+      font-size: 12px;
+    }
+
+    .btn svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .panel {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .filter-panel {
+      margin-bottom: 14px;
+      padding: 16px 16px 14px;
+    }
+
+    .filter-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 13px;
+    }
+
+    .filter-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 680;
+    }
+
+    .filter-title svg {
+      width: 16px;
+      height: 16px;
+      color: var(--brand);
+    }
+
+    .filter-summary {
+      color: var(--muted-2);
+      font-size: 11px;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(128px, 1fr));
+      gap: 12px 13px;
+      align-items: end;
+    }
+
+    .field {
+      min-width: 0;
+    }
+
+    .field.wide {
+      grid-column: span 2;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink-2);
+      font-size: 11px;
+      font-weight: 620;
+    }
+
+    .input-wrap {
+      position: relative;
+      min-width: 0;
+    }
+
+    .input-wrap > svg {
+      position: absolute;
+      z-index: 2;
+      left: 10px;
+      top: 50%;
+      width: 15px;
+      height: 15px;
+      color: #98a2b3;
+      pointer-events: none;
+      transform: translateY(-50%);
+    }
+
+    .input-wrap > svg + input {
+      padding-left: 31px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      color: var(--ink);
+      background: #fff;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      outline: none;
+      transition: border-color .16s ease, box-shadow .16s ease;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select {
+      height: 36px;
+      padding: 0 10px;
+      font-size: 12px;
+    }
+
+    select {
+      appearance: none;
+      padding-right: 30px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 9px center;
+    }
+
+    textarea {
+      min-height: 124px;
+      padding: 10px 11px;
+      resize: vertical;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    textarea[readonly] {
+      color: var(--muted);
+      background: #f8fafc;
+      resize: none;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #8ca7f8;
+      box-shadow: 0 0 0 3px rgba(53, 104, 242, .10);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #b3bac6;
+    }
+
+    input[readonly] {
+      color: var(--muted);
+      background: #f2f4f7;
+      border-color: #e3e8ef;
+      cursor: not-allowed;
+    }
+
+    .date-range {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .date-range span {
+      color: var(--muted-2);
+      font-size: 11px;
+    }
+
+    .region-filter {
+      position: relative;
+      min-width: 0;
+    }
+
+    .region-picker-trigger {
+      width: 100%;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 0 10px;
+      color: var(--ink);
+      background: #fff;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      font-size: 12px;
+      text-align: left;
+    }
+
+    .region-picker-trigger span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .region-picker-trigger svg {
+      width: 14px;
+      height: 14px;
+      color: var(--muted);
+      transition: transform .16s ease;
+    }
+
+    .region-picker-trigger[aria-expanded="true"] svg {
+      transform: rotate(180deg);
+    }
+
+    .region-picker-popover {
+      position: absolute;
+      z-index: 70;
+      top: calc(100% + 6px);
+      left: 0;
+      width: min(560px, 82vw);
+      display: none;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    .region-picker.open .region-picker-popover {
+      display: block;
+    }
+
+    .region-picker-columns {
+      min-height: 210px;
+      max-height: 280px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      overflow-y: auto;
+    }
+
+    .region-column {
+      min-width: 0;
+      padding: 7px;
+      border-right: 1px solid var(--line);
+    }
+
+    .region-column:last-child {
+      border-right: 0;
+    }
+
+    .region-option {
+      width: 100%;
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      padding: 0 9px;
+      color: var(--ink-2);
+      background: transparent;
+      border: 0;
+      border-radius: 5px;
+      font-size: 11px;
+      text-align: left;
+    }
+
+    .region-option:hover,
+    .region-option.active {
+      color: var(--brand);
+      background: var(--brand-soft);
+      font-weight: 650;
+    }
+
+    .region-option:disabled {
+      color: var(--muted-2);
+      background: transparent;
+    }
+
+    .region-picker-footer {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 7px 10px;
+      border-top: 1px solid var(--line);
+    }
+
+    .filter-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      grid-column: span 2;
+    }
+
+    .opp-filter-wide,
+    .opp-filter-medium,
+    .opp-filter-advanced {
+      display: none;
+    }
+
+    .opp-filters.expanded .opp-filter-wide,
+    .opp-filters.expanded .opp-filter-medium,
+    .opp-filters.expanded .opp-filter-advanced {
+      display: block;
+    }
+
+    .opp-filters .filter-actions {
+      grid-column: 5 / 7;
+    }
+
+    .filter-more-row {
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      grid-column: 1 / 5;
+    }
+
+    .filter-more-button {
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .filter-more-button strong {
+      color: var(--brand);
+      font-weight: 700;
+    }
+
+    .filter-more-button svg {
+      width: 14px;
+      height: 14px;
+      color: var(--brand);
+      transition: transform .16s ease;
+    }
+
+    .filter-more-button[aria-expanded="true"] svg {
+      transform: rotate(180deg);
+    }
+
+    @media (min-width: 1381px) {
+      .opp-filter-wide,
+      .opp-filter-medium {
+        display: block;
+      }
+    }
+
+    .tag-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      min-height: 36px;
+      align-items: center;
+    }
+
+    .tag-choice {
+      height: 30px;
+      padding: 0 10px;
+      color: var(--ink-2);
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 11px;
+    }
+
+    .tag-choice.active {
+      color: #234fc9;
+      background: var(--brand-soft);
+      border-color: #bcd0ff;
+      font-weight: 650;
+    }
+
+    .table-panel {
+      overflow: hidden;
+    }
+
+    .table-toolbar {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .selection-summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .selection-summary strong {
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .table-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #c4cbd7 transparent;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      color: var(--ink-2);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .data-table th,
+    .data-table td {
+      height: 46px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #edf0f4;
+      vertical-align: middle;
+      text-align: left;
+    }
+
+    .data-table th {
+      position: sticky;
+      z-index: 4;
+      top: 0;
+      height: 42px;
+      color: #475467;
+      background: #f8f9fb;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .data-table tbody tr {
+      transition: background .12s ease;
+    }
+
+    .data-table tbody tr:hover {
+      background: #fafcff;
+    }
+
+    .data-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .data-table .check-cell {
+      width: 42px;
+      padding-left: 14px;
+      padding-right: 5px;
+    }
+
+    .data-table input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      margin: 0;
+      accent-color: var(--brand);
+    }
+
+    .data-table .sticky-action {
+      position: sticky;
+      right: 0;
+      z-index: 3;
+      min-width: 148px;
+      background: #fff;
+      box-shadow: -10px 0 16px -16px rgba(16, 24, 40, .65);
+    }
+
+    .data-table th.sticky-action {
+      z-index: 6;
+      background: #f8f9fb;
+    }
+
+    .data-table tbody tr:hover .sticky-action {
+      background: #fafcff;
+    }
+
+    .merchant-cell {
+      max-width: 280px;
+      min-width: 0;
+    }
+
+    .merchant-primary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .merchant-name {
+      display: inline-block;
+      overflow: hidden;
+      color: var(--ink);
+      font-weight: 650;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .merchant-tags {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .merchant-tags .tag-list {
+      gap: 3px;
+    }
+
+    .merchant-tags .tag-badge {
+      min-height: 19px;
+      padding: 0 6px;
+      font-size: 9px;
+    }
+
+    .merchant-meta {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted-2);
+      font-size: 10px;
+    }
+
+    .phone-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .phone-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-start;
+    }
+
+    .copy-button {
+      width: 23px;
+      height: 23px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0;
+      color: var(--muted);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+    }
+
+    .copy-button:hover {
+      color: var(--brand);
+      border-color: #bfcffb;
+    }
+
+    .copy-button svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .source-badge,
+    .status-badge,
+    .tag-badge,
+    .intent-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 23px;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 650;
+    }
+
+    .source-badge::before,
+    .status-badge::before {
+      width: 5px;
+      height: 5px;
+      background: currentColor;
+      border-radius: 50%;
+      content: "";
+    }
+
+    .source-meituan {
+      color: #b95000;
+      background: #fff2e6;
+    }
+
+    .source-taobao {
+      color: #c2410c;
+      background: #fff0e8;
+    }
+
+    .source-jd {
+      color: #9f1239;
+      background: #fff0f3;
+    }
+
+    .status-pool {
+      color: var(--amber);
+      background: var(--amber-soft);
+    }
+
+    .status-assigned {
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .status-converted {
+      color: var(--cyan);
+      background: var(--cyan-soft);
+    }
+
+    .status-invalid {
+      color: var(--muted);
+      background: #f2f4f7;
+    }
+
+    .tag-list {
+      display: flex;
+      gap: 4px;
+    }
+
+    .tag-badge {
+      min-height: 21px;
+      padding: 0 7px;
+      color: #475467;
+      background: #f2f4f7;
+    }
+
+    .tag-badge.priority-tag {
+      color: #b42318;
+      background: #fff0ee;
+      border: 1px solid #f5c2bd;
+    }
+
+    .intent-high {
+      color: #067647;
+      background: #e8f8f1;
+    }
+
+    .intent-medium {
+      color: #9a5b00;
+      background: #fff6e5;
+    }
+
+    .intent-low {
+      color: #596274;
+      background: #f2f4f7;
+    }
+
+    .number {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
+    .rating {
+      color: #9a5b00;
+      font-weight: 700;
+    }
+
+    .days-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 0 8px;
+      color: #067647;
+      background: #e8f8f1;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .days-badge.warning {
+      color: #9a5b00;
+      background: #fff6e5;
+    }
+
+    .days-badge.urgent {
+      color: #b42318;
+      background: #fff0ee;
+    }
+
+    .link-button {
+      padding: 0;
+      color: var(--brand);
+      background: transparent;
+      border: 0;
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .link-button:hover {
+      color: var(--brand-dark);
+      text-decoration: underline;
+    }
+
+    .link-button.danger {
+      color: var(--red);
+    }
+
+    .action-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .action-divider {
+      width: 1px;
+      height: 12px;
+      background: var(--line);
+    }
+
+    .empty-state {
+      min-height: 260px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .empty-icon {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 10px;
+      color: #98a2b3;
+      background: #f4f6f9;
+      border-radius: 50%;
+    }
+
+    .empty-state strong {
+      color: var(--ink-2);
+      font-size: 13px;
+    }
+
+    .empty-state span {
+      margin-top: 3px;
+      color: var(--muted-2);
+      font-size: 11px;
+    }
+
+    .table-footer {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 9px 14px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      font-size: 11px;
+    }
+
+    .pager {
+      display: flex;
+      gap: 5px;
+    }
+
+    .pager button {
+      width: 27px;
+      height: 27px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      font-size: 11px;
+    }
+
+    .pager button.active {
+      color: #fff;
+      background: var(--brand);
+      border-color: var(--brand);
+    }
+
+    .column-panel {
+      position: fixed;
+      z-index: 50;
+      width: 236px;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+    }
+
+    .column-panel strong {
+      display: block;
+      margin-bottom: 9px;
+      font-size: 12px;
+    }
+
+    .column-options {
+      max-height: 310px;
+      overflow: auto;
+      scrollbar-width: thin;
+    }
+
+    .column-option {
+      height: 31px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink-2);
+      font-size: 11px;
+    }
+
+    .column-option input {
+      accent-color: var(--brand);
+    }
+
+    .scrim {
+      position: fixed;
+      z-index: 80;
+      inset: 0;
+      background: rgba(15, 23, 42, .42);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+    }
+
+    .scrim.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .drawer {
+      position: fixed;
+      z-index: 90;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(1180px, calc(100vw - var(--sidebar-width)));
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      box-shadow: var(--shadow-lg);
+      transform: translateX(102%);
+      transition: transform .26s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-head {
+      flex: none;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .drawer-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .drawer-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: none;
+    }
+
+    .drawer-actions .btn.outline-pill {
+      height: 32px;
+      padding: 0 14px;
+      color: var(--brand);
+      background: #f5f8ff;
+      border-color: #9db8fa;
+      border-radius: 999px;
+      box-shadow: none;
+    }
+
+    .drawer-actions .btn.outline-pill:hover {
+      color: var(--brand-dark);
+      background: #edf3ff;
+      border-color: #6f94f5;
+    }
+
+    .drawer-merchant {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .entity-icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      flex: none;
+      color: #fff;
+      background: var(--brand);
+      border-radius: 50%;
+      box-shadow: 0 5px 14px rgba(53, 104, 242, .24);
+    }
+
+    .entity-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .drawer-merchant h2 {
+      margin: 1px 0 0;
+      color: var(--ink);
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    .drawer-merchant p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .drawer-content-grid {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 310px;
+      overflow: hidden;
+    }
+
+    .drawer-main {
+      min-width: 0;
+      padding: 18px 20px 24px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #c4cbd7 transparent;
+    }
+
+    .drawer-side {
+      min-width: 0;
+      padding: 18px 16px 24px;
+      overflow-y: auto;
+      background: #fff;
+      border-left: 1px solid var(--line);
+      scrollbar-width: thin;
+      scrollbar-color: #c4cbd7 transparent;
+    }
+
+    .follow-panel-head {
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .follow-panel-head h3 {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 720;
+    }
+
+    .follow-panel-head h3 svg {
+      width: 15px;
+      height: 15px;
+      color: var(--brand);
+    }
+
+    .follow-panel-tools {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 8px 0 5px;
+    }
+
+    .follow-panel-tools .follow-search {
+      min-width: 0;
+    }
+
+    .follow-add {
+      flex: none;
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 0 2px;
+      color: var(--brand);
+      background: transparent;
+      border: 0;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .follow-add svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .tag-edit-button {
+      width: 24px;
+      height: 24px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0;
+      color: var(--brand);
+      background: var(--brand-soft);
+      border: 1px solid #c8d7ff;
+      border-radius: 5px;
+    }
+
+    .tag-edit-button:hover {
+      color: var(--brand-dark);
+      border-color: #9fb9f8;
+    }
+
+    .tag-edit-button svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .phone-edit-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .phone-edit-row {
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr) 74px;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .phone-edit-row > span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .phone-edit-row input[readonly] {
+      color: var(--muted);
+      background: #f8fafc;
+    }
+
+    .tag-picker {
+      position: relative;
+    }
+
+    .tag-picker-trigger {
+      width: 100%;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      color: var(--ink);
+      background: #fff;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      font-size: 12px;
+      text-align: left;
+    }
+
+    .tag-picker-trigger svg {
+      width: 14px;
+      height: 14px;
+      color: var(--muted);
+      transition: transform .16s ease;
+    }
+
+    .tag-picker.open .tag-picker-trigger svg {
+      transform: rotate(180deg);
+    }
+
+    .tag-picker-value {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tag-picker-popover {
+      position: absolute;
+      z-index: 90;
+      top: calc(100% + 6px);
+      left: 0;
+      width: 100%;
+      display: none;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    .tag-picker.open .tag-picker-popover {
+      display: block;
+    }
+
+    .tag-picker-search {
+      position: relative;
+      padding: 8px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .tag-picker-search svg {
+      position: absolute;
+      top: 50%;
+      left: 18px;
+      width: 14px;
+      height: 14px;
+      color: var(--muted-2);
+      transform: translateY(-50%);
+    }
+
+    .tag-picker-search input {
+      height: 34px;
+      padding-left: 30px;
+    }
+
+    .tag-option-list {
+      max-height: 190px;
+      padding: 6px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+
+    .tag-option {
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 8px;
+      color: var(--ink-2);
+      border-radius: 5px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .tag-option:hover {
+      background: #f5f7fa;
+    }
+
+    .tag-option input {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--brand);
+    }
+
+    .tag-option.system-tag {
+      color: var(--muted);
+      background: #f8fafc;
+    }
+
+    .tag-option.system-tag input {
+      cursor: not-allowed;
+    }
+
+    .section-block + .section-block {
+      margin-top: 22px;
+    }
+
+    .section-head {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 12px;
+      background: #f6f7f9;
+      border-radius: 6px;
+    }
+
+    .section-head h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 720;
+    }
+
+    .section-head h3 svg {
+      width: 15px;
+      height: 15px;
+      color: var(--brand);
+    }
+
+    .info-table {
+      width: 100%;
+      margin-top: 10px;
+      border-top: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .info-table th,
+    .info-table td {
+      padding: 9px 11px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    .info-table th {
+      width: 112px;
+      color: #475467;
+      background: #fafbfc;
+      font-size: 11px;
+      font-weight: 650;
+      text-align: left;
+    }
+
+    .info-table td {
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .record-table {
+      width: 100%;
+      margin-top: 10px;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    .record-table th,
+    .record-table td {
+      padding: 11px 8px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+    }
+
+    .record-table th {
+      color: var(--muted);
+      background: #fafbfc;
+      font-weight: 650;
+    }
+
+    .record-table td:first-child {
+      width: 150px;
+      color: var(--ink-2);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .follow-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .follow-search {
+      position: relative;
+      flex: 1;
+    }
+
+    .follow-search svg {
+      position: absolute;
+      top: 50%;
+      left: 10px;
+      width: 14px;
+      height: 14px;
+      color: var(--muted-2);
+      transform: translateY(-50%);
+    }
+
+    .follow-search input {
+      padding-left: 31px;
+    }
+
+    .follow-date {
+      margin: 15px 0 7px;
+      padding: 6px 8px;
+      color: var(--muted);
+      background: #f6f7f9;
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .follow-item {
+      position: relative;
+      padding: 13px 0 14px 30px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .follow-item::before {
+      position: absolute;
+      top: 18px;
+      left: 9px;
+      width: 7px;
+      height: 7px;
+      background: var(--brand);
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px var(--brand-soft);
+      content: "";
+    }
+
+    .follow-item:not(:last-child)::after {
+      position: absolute;
+      top: 30px;
+      bottom: -6px;
+      left: 12px;
+      width: 1px;
+      background: #dfe5ee;
+      content: "";
+    }
+
+    .follow-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 28px;
+    }
+
+    .mini-avatar {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      color: #2442a1;
+      background: #e8eeff;
+      border-radius: 50%;
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .follow-meta strong {
+      color: var(--ink);
+      font-size: 11px;
+    }
+
+    .follow-time {
+      margin-left: auto;
+      color: var(--muted-2);
+      font-size: 10px;
+    }
+
+    .more-wrap {
+      position: relative;
+    }
+
+    .more-button {
+      width: 27px;
+      height: 27px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      color: var(--muted);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+    }
+
+    .more-button svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .row-menu {
+      position: absolute;
+      z-index: 20;
+      top: 31px;
+      right: 0;
+      width: 112px;
+      padding: 5px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .row-menu button {
+      width: 100%;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 8px;
+      color: var(--ink-2);
+      background: transparent;
+      border: 0;
+      border-radius: 4px;
+      font-size: 11px;
+      text-align: left;
+    }
+
+    .row-menu button:hover {
+      background: #f5f7fa;
+    }
+
+    .row-menu button.danger {
+      color: var(--red);
+    }
+
+    .row-menu button svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .follow-content {
+      margin: 8px 0 0 32px;
+      color: var(--ink-2);
+      font-size: 12px;
+      line-height: 1.75;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .follow-convert-summary {
+      margin: 8px 0 0 32px;
+      padding: 8px 10px;
+      color: #475467;
+      background: #f8fafc;
+      border-left: 2px solid var(--brand);
+      border-radius: 0 5px 5px 0;
+      font-size: 10px;
+      line-height: 1.7;
+    }
+
+    .modal-layer {
+      position: fixed;
+      z-index: 110;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(15, 23, 42, .46);
+      backdrop-filter: blur(1px);
+    }
+
+    .modal-layer.open {
+      display: flex;
+    }
+
+    .modal {
+      width: min(560px, 100%);
+      max-height: min(760px, calc(100vh - 36px));
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: var(--shadow-lg);
+      animation: modal-in .2s ease both;
+      overflow: hidden;
+    }
+
+    .modal.wide {
+      width: min(760px, 100%);
+    }
+
+    .modal.small {
+      width: min(440px, 100%);
+    }
+
+    .modal.assign-modal {
+      width: min(520px, 100%);
+      min-height: 392px;
+    }
+
+    .modal.return-modal {
+      width: min(460px, 100%);
+      min-height: 300px;
+    }
+
+    .assign-select-field {
+      max-width: 100%;
+    }
+
+    .assign-select-field select {
+      height: 40px;
+      font-size: 13px;
+    }
+
+    .assign-search-wrap {
+      position: relative;
+      margin-bottom: 12px;
+    }
+
+    .assign-search-wrap svg {
+      position: absolute;
+      top: 50%;
+      left: 10px;
+      width: 15px;
+      height: 15px;
+      color: var(--muted-2);
+      transform: translateY(-50%);
+    }
+
+    .assign-search-wrap input {
+      height: 38px;
+      padding-left: 32px;
+    }
+
+    .assign-org-list {
+      max-height: 330px;
+      overflow-y: auto;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      scrollbar-width: thin;
+      scrollbar-color: #c4cbd7 transparent;
+    }
+
+    .assign-region {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .assign-region:last-child {
+      border-bottom: 0;
+    }
+
+    .assign-region-title {
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      padding: 0 11px;
+      color: var(--ink);
+      background: #f6f7f9;
+      font-size: 11px;
+      font-weight: 720;
+    }
+
+    .assign-team {
+      padding: 5px 8px 7px 16px;
+    }
+
+    .assign-team-title {
+      padding: 4px 6px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 650;
+    }
+
+    .assign-person {
+      position: relative;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .assign-person:hover,
+    .assign-person.selected {
+      background: #f5f8ff;
+    }
+
+    .assign-person input {
+      position: absolute;
+      opacity: 0;
+    }
+
+    .assign-person .radio-mark {
+      width: 16px;
+      height: 16px;
+      display: grid;
+      place-items: center;
+      flex: none;
+      border: 1px solid #c4cbd7;
+      border-radius: 50%;
+    }
+
+    .assign-person.selected .radio-mark {
+      border-color: var(--brand);
+    }
+
+    .assign-person.selected .radio-mark::after {
+      width: 8px;
+      height: 8px;
+      background: var(--brand);
+      border-radius: 50%;
+      content: "";
+    }
+
+    .assign-person-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .assign-person-copy strong {
+      display: block;
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .assign-person-copy span {
+      display: block;
+      margin-top: 1px;
+      color: var(--muted-2);
+      font-size: 9px;
+    }
+
+    .assign-empty {
+      padding: 32px 12px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .modal-body-centered {
+      min-height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .modal-body-centered .confirm-copy {
+      margin: 0;
+      text-align: center;
+    }
+
+    .modal.return-modal .modal-body-centered {
+      min-height: 130px;
+      align-items: flex-start;
+      justify-content: flex-start;
+      padding: 12px 0;
+    }
+
+    .modal.return-modal .confirm-copy {
+      text-align: left;
+    }
+
+    @keyframes modal-in {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .modal-head {
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-head h3 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 720;
+    }
+
+    .modal-head .icon-button {
+      width: 30px;
+      height: 30px;
+      border: 0;
+    }
+
+    .modal-body {
+      flex: 1;
+      min-height: 0;
+      padding: 18px;
+      overflow-y: auto;
+    }
+
+    .modal-footer {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 9px;
+      padding: 12px 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 15px;
+    }
+
+    .required::before {
+      margin-right: 4px;
+      color: var(--red);
+      content: "*";
+    }
+
+    .field-note {
+      margin-top: 5px;
+      color: var(--muted-2);
+      font-size: 10px;
+    }
+
+    .char-counter {
+      margin-top: 6px;
+      color: var(--muted-2);
+      font-size: 10px;
+      text-align: right;
+    }
+
+    .char-counter.limit {
+      color: var(--red);
+    }
+
+    .confirm-copy {
+      margin: 4px 0 2px;
+      color: var(--ink-2);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .confirm-copy strong {
+      color: var(--ink);
+    }
+
+    .toast-wrap {
+      position: fixed;
+      z-index: 150;
+      top: 18px;
+      left: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+      transform: translateX(-50%);
+    }
+
+    .toast {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 13px;
+      color: #fff;
+      background: #182033;
+      border-radius: 7px;
+      box-shadow: var(--shadow-md);
+      font-size: 12px;
+      animation: toast-in .22s ease both;
+    }
+
+    .toast svg {
+      width: 15px;
+      height: 15px;
+      color: #7ee2b8;
+    }
+
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translateY(-7px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .mobile-scrim {
+      position: fixed;
+      z-index: 35;
+      inset: 0;
+      display: none;
+      background: rgba(15, 23, 42, .48);
+    }
+
+    @media (max-width: 1380px) {
+      .filters {
+        grid-template-columns: repeat(4, minmax(130px, 1fr));
+      }
+
+      .filter-actions {
+        grid-column: span 2;
+      }
+
+      .opp-filters .filter-actions {
+        grid-column: 3 / 5;
+      }
+
+      .filter-more-row {
+        grid-column: 1 / 3;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      :root {
+        --sidebar-width: 220px;
+      }
+
+      .screen {
+        padding: 18px;
+      }
+
+      .topbar {
+        padding: 0 18px;
+      }
+
+    }
+
+    @media (max-width: 880px) {
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 248px;
+        transform: translateX(-102%);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .mobile-scrim.open {
+        display: block;
+      }
+
+      .mobile-menu {
+        display: inline-grid !important;
+      }
+
+      .filters {
+        grid-template-columns: repeat(2, minmax(130px, 1fr));
+      }
+
+      .field.wide {
+        grid-column: span 1;
+      }
+
+      .filter-actions {
+        grid-column: 1 / -1;
+      }
+
+      .page-head {
+        align-items: center;
+      }
+
+      .drawer {
+        width: min(760px, 100vw);
+      }
+
+      .drawer-content-grid {
+        display: block;
+        overflow-y: auto;
+      }
+
+      .drawer-main,
+      .drawer-side {
+        overflow: visible;
+      }
+
+      .drawer-side {
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        border-left: 0;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .topbar {
+        height: 56px;
+        padding: 0 12px;
+      }
+
+      .topbar-divider,
+      .breadcrumbs span,
+      .breadcrumbs svg,
+      .role-switch {
+        display: none;
+      }
+
+      .screen {
+        padding: 14px 12px 22px;
+      }
+
+      .page-head h1 {
+        font-size: 21px;
+      }
+
+      .page-head p {
+        display: none;
+      }
+
+      .filters {
+        grid-template-columns: 1fr;
+      }
+
+      .field,
+      .field.wide,
+      .filter-actions {
+        grid-column: 1 / -1;
+      }
+
+      .region-filter {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-actions .btn {
+        flex: 1;
+      }
+
+      .column-panel {
+        right: 12px;
+      }
+
+      .drawer {
+        width: 100vw;
+      }
+
+      .drawer-main {
+        padding: 16px 14px 22px;
+      }
+
+      .drawer-head {
+        padding: 14px;
+      }
+
+      .drawer-title-row {
+        align-items: flex-start;
+      }
+
+      .drawer-actions {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .drawer-actions .btn.outline-pill {
+        height: 30px;
+        padding: 0 10px;
+      }
+
+      .drawer-side {
+        padding: 14px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-layer {
+        align-items: flex-end;
+        padding: 0;
+      }
+
+      .modal,
+      .modal.wide,
+      .modal.small,
+      .modal.assign-modal,
+      .modal.return-modal {
+        width: 100%;
+        max-height: 92vh;
+        border-radius: 12px 12px 0 0;
+      }
+
+      .modal.assign-modal,
+      .modal.return-modal {
+        min-height: 0;
+      }
+
+      .info-table th {
+        width: 92px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <svg aria-hidden="true" width="0" height="0" style="position:absolute">
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 9 4.5-9 4.5-9-4.5L12 2Z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 17 9 4.5 9-4.5"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+    <symbol id="i-briefcase" viewBox="0 0 24 24"><rect width="18" height="14" x="3" y="7" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 21V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 2 9.8 7.8 4 10l5.8 2.2L12 18l2.2-5.8L20 10l-5.8-2.2L12 2Z"/><path d="M19 17v4M17 19h4"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 5h16l-6.5 7.2V19l-3 1v-7.8L4 5Z"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect width="13" height="13" x="9" y="9" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24"><rect width="16" height="18" x="4" y="4" rx="2"/><path d="M9 4V3h6v1M8 10h8M8 14h8"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .64 1.65 1.65 0 0 0-.36 1.04V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8.6 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.64-1 1.65 1.65 0 0 0-1.04-.36H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 8.6a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-.64 1.65 1.65 0 0 0 .36-1.04V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15.4 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.38.37.72.64 1 .29.28.65.4 1.04.36H21a2 2 0 1 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.8 12.8 0 0 0 .69 2.82 2 2 0 0 1-.45 2.11L8.09 9.9a16 16 0 0 0 6 6l1.25-1.25a2 2 0 0 1 2.11-.45 12.8 12.8 0 0 0 2.82.69A2 2 0 0 1 22 16.92Z"/></symbol>
+    <symbol id="i-user-check" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="m17 11 2 2 4-4"/></symbol>
+    <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
+    <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m7 17 10-10"/><path d="M7 7h10v10"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 14h4l2 3h4l2-3h4"/></symbol>
+    <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+  </svg>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark"><svg><use href="#i-spark"></use></svg></div>
+        <div class="brand-copy">
+          <strong>惟客CRM管理系统</strong>
+          <span>线索运营工作台</span>
+        </div>
+      </div>
+
+      <nav class="nav-scroll" aria-label="主导航">
+        <div class="nav-group">
+          <div class="nav-label">业务工作台</div>
+          <button class="nav-item" type="button">
+            <svg><use href="#i-list"></use></svg>
+            <span>公告管理</span>
+          </button>
+          <button class="nav-item" type="button">
+            <svg><use href="#i-clipboard"></use></svg>
+            <span>代运营数据概览</span>
+            <svg class="nav-chevron"><use href="#i-chevron-down"></use></svg>
+          </button>
+          <button class="nav-item" type="button">
+            <svg><use href="#i-users"></use></svg>
+            <span>客户管理</span>
+            <svg class="nav-chevron"><use href="#i-chevron-down"></use></svg>
+          </button>
+          <button class="nav-item" type="button">
+            <svg><use href="#i-briefcase"></use></svg>
+            <span>商机管理</span>
+            <svg class="nav-chevron"><use href="#i-chevron-down"></use></svg>
+          </button>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-label">线索运营</div>
+          <button class="nav-item open" id="lineNav" type="button" data-action="toggle-nav">
+            <svg><use href="#i-target"></use></svg>
+            <span>线索管理</span>
+            <svg class="nav-chevron"><use href="#i-chevron-down"></use></svg>
+          </button>
+          <div class="nav-children open" id="lineChildren">
+            <button class="nav-child active" type="button" data-view="sea">线索公海</button>
+            <button class="nav-child" type="button" data-view="lead">我的线索</button>
+            <button class="nav-child" type="button" data-view="opp">商机列表</button>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-label">协同管理</div>
+          <button class="nav-item" type="button">
+            <svg><use href="#i-users"></use></svg>
+            <span>跟进记录</span>
+            <svg class="nav-chevron"><use href="#i-chevron-down"></use></svg>
+          </button>
+          <button class="nav-item" type="button">
+            <svg><use href="#i-briefcase"></use></svg>
+            <span>工作台管理</span>
+            <svg class="nav-chevron"><use href="#i-chevron-down"></use></svg>
+          </button>
+          <button class="nav-item" type="button">
+            <svg><use href="#i-settings"></use></svg>
+            <span>项目引入</span>
+            <svg class="nav-chevron"><use href="#i-chevron-down"></use></svg>
+          </button>
+          <button class="nav-item" type="button">
+            <svg><use href="#i-database"></use></svg>
+            <span>工单管理</span>
+            <svg class="nav-chevron"><use href="#i-chevron-down"></use></svg>
+          </button>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar">张三</div>
+          <div class="sidebar-user-copy">
+            <strong>张三</strong>
+            <span id="sidebarRole">电销主管</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="mobile-scrim" id="mobileScrim" data-action="close-sidebar"></div>
+
+    <div class="workspace">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button mobile-menu" type="button" data-action="open-sidebar" data-tooltip="打开菜单" aria-label="打开菜单">
+            <svg><use href="#i-menu"></use></svg>
+          </button>
+          <div class="breadcrumbs">
+            <span>线索管理</span>
+            <svg><use href="#i-chevron-right"></use></svg>
+            <strong id="breadcrumbCurrent">线索公海</strong>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="avatar" title="当前登录用户：张三">张三</div>
+        </div>
+      </header>
+
+      <main class="screen" id="screen">
+        <section class="page active" id="page-sea" data-page="sea">
+          <div class="page-head">
+            <div>
+              <div class="eyebrow">LINE POOL</div>
+              <h1>线索公海</h1>
+              <p>RPA 自动采集线索，分配后进入线索列表</p>
+            </div>
+          </div>
+
+          <div class="list-tabs" aria-label="线索公海状态">
+            <button class="list-tab active" type="button" data-action="switch-list-tab" data-scope="sea" data-tab="pool">
+              待分配 <span class="list-tab-count" id="seaPoolTabCount">0</span>
+            </button>
+            <button class="list-tab" type="button" data-action="switch-list-tab" data-scope="sea" data-tab="assigned">
+              已分配 <span class="list-tab-count" id="seaAssignedTabCount">0</span>
+            </button>
+            <button class="list-tab" type="button" data-action="switch-list-tab" data-scope="sea" data-tab="invalid">
+              无效线索 <span class="list-tab-count" id="seaInvalidTabCount">0</span>
+            </button>
+          </div>
+
+          <section class="panel filter-panel">
+            <div class="filter-head">
+              <div class="filter-title">
+                <svg><use href="#i-filter"></use></svg>
+                <span>筛选条件</span>
+              </div>
+              <span class="filter-summary">支持组合筛选</span>
+            </div>
+            <form class="filters" data-filter-form="sea" id="seaFilterForm">
+              <div class="field">
+                <label for="seaKeyword">线索编号</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="seaKeyword" type="text" data-filter-scope="sea" data-filter-key="keyword" placeholder="模糊搜索">
+                </div>
+              </div>
+              <div class="field">
+                <label for="seaMerchant">商户名称</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="seaMerchant" type="text" data-filter-scope="sea" data-filter-key="merchant" placeholder="模糊搜索">
+                </div>
+              </div>
+              <div class="field">
+                <label for="seaPhone">电话</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="seaPhone" type="text" data-filter-scope="sea" data-filter-key="phone" placeholder="模糊搜索">
+                </div>
+              </div>
+              <div class="field">
+                <label>省 / 市 / 区县</label>
+                <div class="region-filter" data-region-scope="sea"></div>
+              </div>
+              <div class="field">
+                <label for="seaSource">线索来源</label>
+                <select id="seaSource" data-filter-scope="sea" data-filter-key="source">
+                  <option value="">全部</option>
+                  <option value="美团外卖">美团</option>
+                  <option value="淘宝闪购">淘宝闪购</option>
+                  <option value="京东秒送">京东秒送</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="seaTag">标签</label>
+                <select id="seaTag" data-filter-scope="sea" data-filter-key="tag">
+                  <option value="">全部</option>
+                  <option value="餐饮">餐饮</option>
+                  <option value="连锁">连锁</option>
+                  <option value="高意向">高意向</option>
+                  <option value="待回访">待回访</option>
+                  <option value="零售">零售</option>
+                </select>
+              </div>
+              <div class="field" id="seaSalesField">
+                <label for="seaSales">电销员</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="seaSales" type="text" data-filter-scope="sea" data-filter-key="sales" placeholder="模糊搜索">
+                </div>
+              </div>
+              <div class="field wide">
+                <label>创建时间</label>
+                <div class="date-range">
+                  <input type="date" data-filter-scope="sea" data-filter-key="startDate" aria-label="创建开始时间">
+                  <span>至</span>
+                  <input type="date" data-filter-scope="sea" data-filter-key="endDate" aria-label="创建结束时间">
+                </div>
+              </div>
+              <div class="field wide">
+                <label>派单时间</label>
+                <div class="date-range">
+                  <input type="date" data-filter-scope="sea" data-filter-key="assignStartDate" aria-label="派单开始时间">
+                  <span>至</span>
+                  <input type="date" data-filter-scope="sea" data-filter-key="assignEndDate" aria-label="派单结束时间">
+                </div>
+              </div>
+              <div class="filter-actions">
+                <button class="btn" type="reset" data-action="reset-filters" data-scope="sea">重置</button>
+                <button class="btn primary" type="submit">
+                  <svg><use href="#i-search"></use></svg>
+                  查询
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel table-panel">
+            <div class="table-toolbar">
+              <div class="selection-summary">
+                已选 <strong id="seaSelectedCount">0</strong> 条
+              </div>
+              <div class="table-actions">
+                <button class="btn small" type="button" data-action="batch-assign" data-scope="sea">
+                  <svg><use href="#i-user-check"></use></svg>
+                  批量分配
+                </button>
+                <button class="btn small" type="button" data-action="export" data-scope="sea">
+                  <svg><use href="#i-download"></use></svg>
+                  导出
+                </button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="seaTable" style="min-width:1830px">
+                <thead id="seaHead"></thead>
+                <tbody id="seaBody"></tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <span id="seaTotal">共 0 条</span>
+              <div class="pager">
+                <button type="button" disabled aria-label="上一页"><svg><use href="#i-chevron-left"></use></svg></button>
+                <button type="button" class="active">1</button>
+                <button type="button" disabled aria-label="下一页"><svg><use href="#i-chevron-right"></use></svg></button>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section class="page" id="page-lead" data-page="lead">
+          <div class="page-head">
+            <div>
+              <div class="eyebrow">MY LEADS</div>
+              <h1>我的线索</h1>
+              <p id="leadPageSubtitle">电销主管可查看并调整团队线索</p>
+            </div>
+          </div>
+
+          <div class="list-tabs" aria-label="我的线索跟进阶段">
+            <button class="list-tab active" type="button" data-action="switch-list-tab" data-scope="lead" data-tab="pending">
+              待跟进 <span class="list-tab-count" id="leadPendingTabCount">0</span>
+            </button>
+            <button class="list-tab" type="button" data-action="switch-list-tab" data-scope="lead" data-tab="following">
+              跟进中 <span class="list-tab-count" id="leadFollowingTabCount">0</span>
+            </button>
+          </div>
+
+          <section class="panel filter-panel">
+            <div class="filter-head">
+              <div class="filter-title">
+                <svg><use href="#i-filter"></use></svg>
+                <span>筛选条件</span>
+              </div>
+              <span class="filter-summary">标签支持下拉筛选</span>
+            </div>
+            <form class="filters" data-filter-form="lead" id="leadFilterForm">
+              <div class="field">
+                <label for="leadKeyword">线索编号</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="leadKeyword" type="text" data-filter-scope="lead" data-filter-key="keyword" placeholder="模糊搜索">
+                </div>
+              </div>
+              <div class="field">
+                <label for="leadMerchant">商户名称</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="leadMerchant" type="text" data-filter-scope="lead" data-filter-key="merchant" placeholder="模糊搜索">
+                </div>
+              </div>
+              <div class="field">
+                <label for="leadPhone">电话</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="leadPhone" type="text" data-filter-scope="lead" data-filter-key="phone" placeholder="模糊搜索">
+                </div>
+              </div>
+              <div class="field">
+                <label>省 / 市 / 区县</label>
+                <div class="region-filter" data-region-scope="lead"></div>
+              </div>
+              <div class="field">
+                <label for="leadSource">线索来源</label>
+                <select id="leadSource" data-filter-scope="lead" data-filter-key="source">
+                  <option value="">全部</option>
+                  <option value="美团外卖">美团</option>
+                  <option value="淘宝闪购">淘宝闪购</option>
+                  <option value="京东秒送">京东秒送</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="leadSales">电销员</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="leadSales" type="text" data-filter-scope="lead" data-filter-key="sales" placeholder="模糊搜索">
+                </div>
+              </div>
+              <div class="field">
+                <label for="leadRemainingRange">剩余跟进时间（天）</label>
+                <input id="leadRemainingRange" type="number" min="0" max="7" step="1" data-filter-scope="lead" data-filter-key="remainingDays" placeholder="请输入天数">
+              </div>
+              <div class="field wide">
+                <label>派单时间</label>
+                <div class="date-range">
+                  <input type="date" data-filter-scope="lead" data-filter-key="assignStartDate" aria-label="派单开始时间">
+                  <span>至</span>
+                  <input type="date" data-filter-scope="lead" data-filter-key="assignEndDate" aria-label="派单结束时间">
+                </div>
+              </div>
+              <div class="field">
+                <label for="leadTag">标签</label>
+                <select id="leadTag" data-filter-scope="lead" data-filter-key="tag">
+                  <option value="">全部</option>
+                  <option value="餐饮">餐饮</option>
+                  <option value="连锁">连锁</option>
+                  <option value="高意向">高意向</option>
+                  <option value="待回访">待回访</option>
+                  <option value="零售">零售</option>
+                </select>
+              </div>
+              <div class="field wide">
+                <label>创建时间</label>
+                <div class="date-range">
+                  <input type="date" data-filter-scope="lead" data-filter-key="startDate" aria-label="创建开始时间">
+                  <span>至</span>
+                  <input type="date" data-filter-scope="lead" data-filter-key="endDate" aria-label="创建结束时间">
+                </div>
+              </div>
+              <div class="filter-actions">
+                <button class="btn" type="reset" data-action="reset-filters" data-scope="lead">重置</button>
+                <button class="btn primary" type="submit">
+                  <svg><use href="#i-search"></use></svg>
+                  查询
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel table-panel">
+            <div class="table-toolbar">
+              <div class="selection-summary">
+                已选 <strong id="leadSelectedCount">0</strong> 条
+              </div>
+              <div class="table-actions">
+                <button class="icon-button" type="button" data-action="toggle-columns" data-scope="lead" data-tooltip="表头设置" aria-label="表头设置">
+                  <svg><use href="#i-settings"></use></svg>
+                </button>
+                <button class="btn small" type="button" data-action="export" data-scope="lead">
+                  <svg><use href="#i-download"></use></svg>
+                  导出
+                </button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="leadTable" style="min-width:2350px">
+                <thead id="leadHead"></thead>
+                <tbody id="leadBody"></tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <span id="leadTotal">共 0 条</span>
+              <div class="pager">
+                <button type="button" disabled aria-label="上一页"><svg><use href="#i-chevron-left"></use></svg></button>
+                <button type="button" class="active">1</button>
+                <button type="button" disabled aria-label="下一页"><svg><use href="#i-chevron-right"></use></svg></button>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section class="page" id="page-opp" data-page="opp">
+          <div class="page-head">
+            <div>
+              <div class="eyebrow">OPPORTUNITIES</div>
+              <h1>商机列表</h1>
+              <p>线索转商机后自动生成代运营线索工单</p>
+            </div>
+          </div>
+
+          <section class="panel filter-panel">
+            <div class="filter-head">
+              <div class="filter-title">
+                <svg><use href="#i-filter"></use></svg>
+                <span>筛选条件</span>
+              </div>
+              <span class="filter-summary">列表按创建时间倒序</span>
+            </div>
+            <form class="filters opp-filters" data-filter-form="opp" id="oppFilterForm">
+              <div class="field">
+                <label for="oppMerchant">商户名称</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="oppMerchant" type="text" data-filter-scope="opp" data-filter-key="merchant" placeholder="请输入商户名称">
+                </div>
+              </div>
+              <div class="field">
+                <label>省 / 市 / 区县</label>
+                <div class="region-filter" data-region-scope="opp"></div>
+              </div>
+              <div class="field">
+                <label for="oppCategory">品类</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="oppCategory" type="text" data-filter-scope="opp" data-filter-key="category" placeholder="请输入品类">
+                </div>
+              </div>
+              <div class="field">
+                <label for="oppSource">线索来源</label>
+                <select id="oppSource" data-filter-scope="opp" data-filter-key="source">
+                  <option value="">全部</option>
+                  <option value="电销">电销</option>
+                  <option value="渠道">渠道</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="oppCreator">线索提供人</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="oppCreator" type="text" data-filter-scope="opp" data-filter-key="creator" placeholder="请输入提供人">
+                </div>
+              </div>
+              <div class="field opp-filter-medium">
+                <label for="oppContact">联系人</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="oppContact" type="text" data-filter-scope="opp" data-filter-key="contact" placeholder="请输入联系人">
+                </div>
+              </div>
+              <div class="field opp-filter-medium">
+                <label for="oppPhone">联系电话</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="oppPhone" type="text" data-filter-scope="opp" data-filter-key="phone" placeholder="请输入联系电话">
+                </div>
+              </div>
+              <div class="field opp-filter-wide">
+                <label for="oppSales">电销员</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="oppSales" type="text" data-filter-scope="opp" data-filter-key="sales" placeholder="模糊搜索">
+                </div>
+              </div>
+              <div class="field opp-filter-wide">
+                <label for="oppWorkOwner">工单负责人</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="oppWorkOwner" type="text" data-filter-scope="opp" data-filter-key="workOwner" placeholder="姓名/手机号">
+                </div>
+              </div>
+              <div class="field opp-filter-advanced">
+                <label for="oppGroupBuilt">是否建客户群</label>
+                <select id="oppGroupBuilt" data-filter-scope="opp" data-filter-key="groupBuilt">
+                  <option value="">全部</option>
+                  <option value="是">是</option>
+                  <option value="否">否</option>
+                </select>
+              </div>
+              <div class="field opp-filter-advanced">
+                <label for="oppIntent">意向度</label>
+                <select id="oppIntent" data-filter-scope="opp" data-filter-key="intent">
+                  <option value="">全部</option>
+                  <option value="高">高</option>
+                  <option value="中">中</option>
+                  <option value="低">低</option>
+                </select>
+              </div>
+              <div class="field opp-filter-advanced">
+                <label for="oppSigned">签约状态</label>
+                <select id="oppSigned" data-filter-scope="opp" data-filter-key="signed">
+                  <option value="">全部</option>
+                  <option value="已签约">已签约</option>
+                  <option value="未签约">未签约</option>
+                </select>
+              </div>
+              <div class="field opp-filter-advanced">
+                <label for="oppStatus">状态</label>
+                <select id="oppStatus" data-filter-scope="opp" data-filter-key="status">
+                  <option value="">全部</option>
+                  <option value="已转化">已转化</option>
+                  <option value="未转化">未转化</option>
+                  <option value="无效">无效</option>
+                </select>
+              </div>
+              <div class="field opp-filter-advanced">
+                <label for="oppTag">标签</label>
+                <select id="oppTag" data-filter-scope="opp" data-filter-key="tag">
+                  <option value="">全部</option>
+                  <option value="餐饮">餐饮</option>
+                  <option value="连锁">连锁</option>
+                  <option value="高意向">高意向</option>
+                  <option value="待回访">待回访</option>
+                  <option value="零售">零售</option>
+                </select>
+              </div>
+              <div class="field wide opp-filter-advanced">
+                <label>创建时间</label>
+                <div class="date-range">
+                  <input type="date" data-filter-scope="opp" data-filter-key="startDate" aria-label="创建开始时间">
+                  <span>至</span>
+                  <input type="date" data-filter-scope="opp" data-filter-key="endDate" aria-label="创建结束时间">
+                </div>
+              </div>
+              <div class="field wide opp-filter-advanced">
+                <label>开始计费时间</label>
+                <div class="date-range">
+                  <input type="date" data-filter-scope="opp" data-filter-key="serviceStartDate" aria-label="开始计费开始时间">
+                  <span>至</span>
+                  <input type="date" data-filter-scope="opp" data-filter-key="serviceEndDate" aria-label="开始计费结束时间">
+                </div>
+              </div>
+              <div class="filter-actions">
+                <button class="btn" type="reset" data-action="reset-filters" data-scope="opp">重置</button>
+                <button class="btn primary" type="submit">
+                  <svg><use href="#i-search"></use></svg>
+                  查询
+                </button>
+              </div>
+              <div class="filter-more-row">
+                <button class="filter-more-button" type="button" data-action="toggle-more-filters" data-scope="opp" aria-expanded="false">
+                  <span>更多筛选</span>
+                  <strong>展开全部</strong>
+                  <svg><use href="#i-chevron-down"></use></svg>
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <div class="list-tabs" aria-label="商机合作状态">
+            <button class="list-tab active" type="button" data-action="switch-list-tab" data-scope="opp" data-tab="pending">
+              待合作 <span class="list-tab-count" id="oppPendingTabCount">0</span>
+            </button>
+            <button class="list-tab" type="button" data-action="switch-list-tab" data-scope="opp" data-tab="cooperating">
+              已合作 <span class="list-tab-count" id="oppCooperatingTabCount">0</span>
+            </button>
+          </div>
+
+          <section class="panel table-panel">
+            <div class="table-toolbar">
+              <div class="selection-summary">
+                已选 <strong id="oppSelectedCount">0</strong> 条
+              </div>
+              <div class="table-actions">
+                <span id="oppColumnSummary" class="filter-summary"></span>
+                <button class="icon-button" type="button" data-action="toggle-columns" data-scope="opp" data-tooltip="表头设置" aria-label="表头设置">
+                  <svg><use href="#i-settings"></use></svg>
+                </button>
+                <button class="btn small" type="button" data-action="new-opportunity">
+                  <svg><use href="#i-plus"></use></svg>
+                  新增
+                </button>
+                <button class="btn small" type="button" data-action="import-opportunities">
+                  <svg><use href="#i-upload"></use></svg>
+                  导入
+                </button>
+                <button class="btn small" type="button" data-action="export" data-scope="opp">
+                  <svg><use href="#i-download"></use></svg>
+                  导出
+                </button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="oppTable">
+                <thead id="oppHead"></thead>
+                <tbody id="oppBody"></tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <span id="oppTotal">共 0 条</span>
+              <div class="pager">
+                <button type="button" disabled aria-label="上一页"><svg><use href="#i-chevron-left"></use></svg></button>
+                <button type="button" class="active">1</button>
+                <button type="button" disabled aria-label="下一页"><svg><use href="#i-chevron-right"></use></svg></button>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="columnPanelRoot"></div>
+  <div class="scrim" id="drawerScrim" data-action="close-drawer"></div>
+  <div id="drawerRoot"></div>
+  <div class="modal-layer" id="modalRoot"></div>
+  <div class="toast-wrap" id="toastRoot"></div>
+
+  <script>
+    const CURRENT_USER = "张三";
+
+    const sourceClass = {
+      "美团外卖": "source-meituan",
+      "淘宝闪购": "source-taobao",
+      "京东秒送": "source-jd"
+    };
+
+    const salesPeople = [
+      { name: "张三", region: "华东区域", team: "华东电销一组", load: "23 条跟进中" },
+      { name: "李四", region: "华东区域", team: "华东电销二组", load: "18 条跟进中" },
+      { name: "王芳", region: "华南区域", team: "华南电销一组", load: "16 条跟进中" },
+      { name: "陈晨", region: "华南区域", team: "华南电销二组", load: "21 条跟进中" }
+    ];
+
+    const tagOptions = ["餐饮", "连锁", "高意向", "待回访", "零售", "一面未转化", "到期释放"];
+
+    const addressHierarchy = {
+      "浙江省": { "杭州市": ["西湖区", "滨江区"] },
+      "上海市": { "上海市": ["浦东新区", "徐汇区"] },
+      "四川省": { "成都市": ["武侯区", "锦江区"] },
+      "广东省": { "广州市": ["天河区"], "深圳市": ["南山区", "福田区"] },
+      "江苏省": { "南京市": ["秦淮区", "鼓楼区"] },
+      "湖北省": { "武汉市": ["洪山区", "武昌区"] },
+      "福建省": { "厦门市": ["思明区", "湖里区"] },
+      "北京市": { "北京市": ["朝阳区", "海淀区"] }
+    };
+
+    const leads = [
+      {
+        id: "LD202610120001",
+        merchant: "江南小馆",
+        contact: "张伟",
+        phone: "15012340932",
+        address: "杭州市西湖区文三路 188 号",
+        province: "浙江省",
+        city: "杭州市",
+        district: "西湖区",
+        extraPhones: [],
+        monthSales: 2860,
+        rating: 4.8,
+        source: "美团外卖",
+        tags: ["餐饮", "高意向"],
+        status: "pool",
+        sales: "",
+        reviews: 862,
+        goodReviews: 821,
+        badReviews: 41,
+        creator: "系统采集",
+        createdAt: "2026-10-12 10:24:32",
+        note: "午市订单增长明显，老板关注平台运营效率",
+        signed: "未签约",
+        serviceOpenAt: ""
+      },
+      {
+        id: "LD202610120002",
+        merchant: "沪上鲜味",
+        contact: "李娜",
+        phone: "13876152647",
+        address: "上海市浦东新区张杨路 1028 号",
+        province: "上海市",
+        city: "上海市",
+        district: "浦东新区",
+        extraPhones: ["13876152680"],
+        monthSales: 3920,
+        rating: 4.9,
+        source: "淘宝闪购",
+        tags: ["餐饮", "连锁"],
+        status: "assigned",
+        sales: "张三",
+        leadSection: "following",
+        assignedAt: "2026-10-13 09:00:00",
+        reviews: 1632,
+        goodReviews: 1590,
+        badReviews: 42,
+        creator: "RPA采集",
+        createdAt: "2026-10-12 09:58:11",
+        note: "已有三家门店，近期计划扩充线上运营团队",
+        signed: "未签约",
+        serviceOpenAt: ""
+      },
+      {
+        id: "LD202610120003",
+        merchant: "蜀香火锅",
+        contact: "周强",
+        phone: "18622918376",
+        address: "成都市武侯区科华北路 66 号",
+        province: "四川省",
+        city: "成都市",
+        district: "武侯区",
+        extraPhones: [],
+        monthSales: 5180,
+        rating: 4.7,
+        source: "美团外卖",
+        tags: ["餐饮", "待回访"],
+        status: "pool",
+        sales: "",
+        reviews: 2210,
+        goodReviews: 2087,
+        badReviews: 123,
+        creator: "系统采集",
+        createdAt: "2026-10-12 09:34:07",
+        note: "差评集中在出餐时效，可切运营效率提升",
+        signed: "未签约",
+        serviceOpenAt: ""
+      },
+      {
+        id: "LD202610120004",
+        merchant: "鲜果日记",
+        contact: "王丽",
+        phone: "13799205516",
+        address: "广州市天河区体育西路 103 号",
+        province: "广东省",
+        city: "广州市",
+        district: "天河区",
+        extraPhones: [],
+        monthSales: 1960,
+        rating: 4.6,
+        source: "京东秒送",
+        tags: ["零售", "高意向"],
+        status: "assigned",
+        sales: "张三",
+        leadSection: "following",
+        assignedAt: "2026-10-11 10:00:00",
+        reviews: 728,
+        goodReviews: 682,
+        badReviews: 46,
+        creator: "RPA采集",
+        createdAt: "2026-10-11 18:42:26",
+        note: "负责人希望提高京东秒送渠道订单占比",
+        signed: "未签约",
+        serviceOpenAt: ""
+      },
+      {
+        id: "LD202610120005",
+        merchant: "老城面馆",
+        contact: "赵军",
+        phone: "13981067231",
+        address: "南京市秦淮区中山南路 318 号",
+        province: "江苏省",
+        city: "南京市",
+        district: "秦淮区",
+        extraPhones: [],
+        monthSales: 1440,
+        rating: 4.5,
+        source: "淘宝闪购",
+        tags: ["餐饮", "待回访"],
+        status: "assigned",
+        sales: "李四",
+        leadSection: "following",
+        assignedAt: "2026-10-10 14:00:00",
+        reviews: 516,
+        goodReviews: 465,
+        badReviews: 51,
+        creator: "系统采集",
+        createdAt: "2026-10-11 16:21:45",
+        note: "客单价偏低，需要进一步判断运营预算",
+        signed: "未签约",
+        serviceOpenAt: ""
+      },
+      {
+        id: "LD202610120006",
+        merchant: "元气轻食",
+        contact: "钱悦",
+        phone: "15802771492",
+        address: "武汉市洪山区珞喻路 728 号",
+        province: "湖北省",
+        city: "武汉市",
+        district: "洪山区",
+        extraPhones: ["15802771493"],
+        monthSales: 3320,
+        rating: 4.8,
+        source: "美团外卖",
+        tags: ["餐饮", "连锁", "高意向"],
+        status: "assigned",
+        sales: "张三",
+        leadSection: "following",
+        assignedAt: "2026-10-08 09:00:00",
+        converted: true,
+        reviews: 1184,
+        goodReviews: 1132,
+        badReviews: 52,
+        creator: "RPA采集",
+        createdAt: "2026-10-11 15:06:39",
+        note: "计划新增两家门店，希望做集团化数据看板",
+        signed: "已签约",
+        serviceOpenAt: "2026-10-12 08:30:00"
+      },
+      {
+        id: "LD202610120007",
+        merchant: "壹号茶铺",
+        contact: "孙敏",
+        phone: "13677820315",
+        address: "深圳市南山区海德三道 88 号",
+        province: "广东省",
+        city: "深圳市",
+        district: "南山区",
+        extraPhones: [],
+        monthSales: 6240,
+        rating: 4.9,
+        source: "京东秒送",
+        tags: ["零售", "连锁", "高意向"],
+        status: "pool",
+        sales: "",
+        reviews: 2864,
+        goodReviews: 2781,
+        badReviews: 83,
+        creator: "RPA采集",
+        createdAt: "2026-10-11 13:48:02",
+        note: "线上月销增长快，正在筛选代运营服务商",
+        signed: "未签约",
+        serviceOpenAt: ""
+      },
+      {
+        id: "LD202610120008",
+        merchant: "桂香烘焙",
+        contact: "许宁",
+        phone: "13755190328",
+        address: "杭州市滨江区江南大道 66 号",
+        province: "浙江省",
+        city: "杭州市",
+        district: "滨江区",
+        extraPhones: [],
+        monthSales: 2460,
+        rating: 4.7,
+        source: "淘宝闪购",
+        tags: ["零售", "待回访"],
+        status: "assigned",
+        sales: "张三",
+        leadSection: "following",
+        assignedAt: "2026-10-10 10:00:00",
+        reviews: 652,
+        goodReviews: 608,
+        badReviews: 44,
+        creator: "RPA采集",
+        createdAt: "2026-10-12 11:08:20",
+        note: "距离派单已 4 天，剩余跟进时间 3 天",
+        signed: "未签约",
+        serviceOpenAt: ""
+      },
+      {
+        id: "LD202610130001",
+        merchant: "云上川菜",
+        contact: "陈梅",
+        phone: "18980653321",
+        address: "成都市武侯区科华路 98 号",
+        province: "四川省",
+        city: "成都市",
+        district: "武侯区",
+        extraPhones: ["18980653322"],
+        monthSales: 4120,
+        rating: 4.7,
+        source: "美团外卖",
+        tags: ["餐饮", "一面未转化"],
+        status: "assigned",
+        sales: "张三",
+        leadSection: "pending",
+        assignedAt: "2026-10-14 09:30:00",
+        reviews: 1328,
+        goodReviews: 1266,
+        badReviews: 62,
+        creator: "工单回流",
+        createdAt: "2026-10-13 09:30:12",
+        note: "一面沟通未转化，工单退回我的线索待分配",
+        signed: "未签约",
+        serviceOpenAt: ""
+      },
+      {
+        id: "LD202610130002",
+        merchant: "潮汕牛肉火锅",
+        contact: "林浩",
+        phone: "13510668829",
+        address: "深圳市福田区福华路 168 号",
+        province: "广东省",
+        city: "深圳市",
+        district: "福田区",
+        extraPhones: [],
+        monthSales: 3680,
+        rating: 4.6,
+        source: "京东秒送",
+        tags: ["餐饮", "到期释放"],
+        status: "pool",
+        sales: "",
+        reviews: 986,
+        goodReviews: 931,
+        badReviews: 55,
+        creator: "系统释放",
+        createdAt: "2026-10-06 11:20:00",
+        note: "派单后 7 天未转化，系统自动退回公海",
+        signed: "未签约",
+        serviceOpenAt: ""
+      },
+      {
+        id: "LD202610130003",
+        merchant: "星味麻辣烫",
+        contact: "周婷",
+        phone: "13620981775",
+        address: "深圳市福田区深南大道 320 号",
+        province: "广东省",
+        city: "深圳市",
+        district: "福田区",
+        extraPhones: [],
+        monthSales: 1820,
+        rating: 4.4,
+        source: "美团外卖",
+        tags: ["无效线索", "人工退回", "系统退回"],
+        status: "invalid",
+        sales: "",
+        returnCount: 2,
+        reviews: 442,
+        goodReviews: 391,
+        badReviews: 51,
+        creator: "系统释放",
+        createdAt: "2026-10-05 14:20:00",
+        note: "人工退回一次，系统到期释放一次，进入无效线索公海池",
+        signed: "未签约",
+        serviceOpenAt: ""
+      }
+    ];
+
+    const opportunities = [
+      {
+        id: "OP202610120008",
+        merchant: "元气轻食",
+        category: "轻食简餐",
+        phone: "15802771492",
+        contact: "钱悦",
+        address: "武汉市洪山区珞喻路 728 号",
+        extraPhones: ["15802771493"],
+        demand: "新增门店运营看板与外卖渠道诊断",
+        groupBuilt: "是",
+        intent: "高",
+        monthSales: 3320,
+        rating: 4.8,
+        sales: "张三",
+        workOwner: "刘畅",
+        source: "电销",
+        tags: ["餐饮", "连锁"],
+        status: "已转化",
+        province: "湖北省",
+        city: "武汉市",
+        district: "洪山区",
+        serviceOpened: "已开通",
+        serviceOpenAt: "2026-10-12 08:30:00",
+        creator: "张三",
+        createdAt: "2026-10-12 08:12:36",
+        note: "已建服务群，等待门店授权",
+        signed: "已签约"
+      },
+      {
+        id: "OP202610110021",
+        merchant: "海岸牛排",
+        category: "西餐",
+        phone: "13855098126",
+        contact: "吴杰",
+        address: "厦门市思明区湖滨南路 99 号",
+        extraPhones: [],
+        demand: "提升美团外卖评分和复购率",
+        groupBuilt: "否",
+        intent: "中",
+        monthSales: 2780,
+        rating: 4.6,
+        sales: "李四",
+        workOwner: "许文",
+        source: "渠道",
+        tags: ["餐饮"],
+        status: "未转化",
+        province: "福建省",
+        city: "厦门市",
+        district: "思明区",
+        serviceOpened: "未开通",
+        serviceOpenAt: "",
+        creator: "李四",
+        createdAt: "2026-10-11 17:42:10",
+        note: "重点跟进差评回复机制",
+        signed: "未签约"
+      },
+      {
+        id: "OP202610100014",
+        merchant: "壹号茶铺",
+        category: "茶饮",
+        phone: "13677820315",
+        contact: "孙敏",
+        address: "深圳市南山区海德三道 88 号",
+        extraPhones: [],
+        demand: "多门店数据汇总与营销活动复盘",
+        groupBuilt: "是",
+        intent: "高",
+        monthSales: 6240,
+        rating: 4.9,
+        sales: "张三",
+        workOwner: "王珂",
+        source: "电销",
+        tags: ["零售", "连锁"],
+        status: "已转化",
+        province: "广东省",
+        city: "深圳市",
+        district: "南山区",
+        serviceOpened: "已开通",
+        serviceOpenAt: "2026-10-11 10:15:00",
+        creator: "张三",
+        createdAt: "2026-10-10 15:21:48",
+        note: "已完成首批五家门店数据接入",
+        signed: "已签约"
+      },
+      {
+        id: "OP202610090009",
+        merchant: "北岸咖啡",
+        category: "咖啡",
+        phone: "13589021674",
+        contact: "郑楠",
+        address: "北京市朝阳区望京街 12 号",
+        extraPhones: [],
+        demand: "外卖平台新品冷启动",
+        groupBuilt: "否",
+        intent: "低",
+        monthSales: 980,
+        rating: 4.3,
+        sales: "王芳",
+        workOwner: "未分配",
+        source: "渠道",
+        tags: ["零售"],
+        status: "无效",
+        province: "北京市",
+        city: "北京市",
+        district: "朝阳区",
+        serviceOpened: "未开通",
+        serviceOpenAt: "",
+        creator: "王芳",
+        createdAt: "2026-10-09 11:03:26",
+        note: "预算暂未明确",
+        signed: "未签约"
+      }
+    ];
+
+    const followRecords = {
+      "LD202610120001": [
+        {
+          id: "F01",
+          author: "张三",
+          time: "2026-10-12 11:08:26",
+          content: "已电话沟通午市订单增长情况，商户希望进一步了解代运营服务范围和收费方式。"
+        },
+        {
+          id: "F02",
+          author: "李四",
+          time: "2026-10-11 16:42:08",
+          content: "首次联系已完成，已添加企业微信，约定补充门店经营数据后再次跟进。"
+        }
+      ],
+      "LD202610120002": [
+        {
+          id: "F1",
+          author: "张三",
+          time: "2026-10-12 11:08:26",
+          content: "已与商户负责人电话沟通，重点问题是午晚高峰配送超时。已发送运营诊断模板，约定明天下午查看门店数据。"
+        },
+        {
+          id: "F2",
+          author: "李四",
+          time: "2026-10-11 16:42:08",
+          content: "首次电话未接通，已添加企业微信，待再次回访。"
+        }
+      ],
+      "LD202610120004": [
+        {
+          id: "F3",
+          author: "张三",
+          time: "2026-10-12 10:36:41",
+          content: "确认对方有三家门店，当前最关注京东秒送订单增长和门店评分改善。"
+        }
+      ],
+      "LD202610130003": [
+        {
+          id: "F10",
+          author: "张三",
+          time: "2026-10-11 16:20:00",
+          content: "跟进无果，商户明确表示暂不考虑代运营服务。",
+          type: "未转商机"
+        },
+        {
+          id: "F11",
+          author: "张三",
+          time: "2026-10-12 10:05:00",
+          content: "二次回访仍未接通，记录为无效线索。",
+          type: "未转商机"
+        }
+      ],
+      "OP202610120008": [
+        {
+          id: "F4",
+          author: "张三",
+          time: "2026-10-12 11:32:19",
+          content: "服务群已建立，客户已完成两家长店授权，剩余一家等待店长配合。"
+        },
+        {
+          id: "F5",
+          author: "刘畅",
+          time: "2026-10-12 09:18:43",
+          content: "已完成初次资料收集，准备进入门店诊断阶段。"
+        }
+      ]
+    };
+
+    const operationRecords = {
+      lead: [
+        { time: "2026-10-12 10:24:32", content: "RPA 自动采集线索并进入线索公海", operator: "系统" },
+        { time: "2026-10-12 09:58:11", content: "分配该线索至电销员【张三】", operator: "电销主管" }
+      ],
+      opp: [
+        { time: "2026-10-12 08:12:36", content: "线索转为商机并自动生成代运营线索工单", operator: "张三" },
+        { time: "2026-10-12 08:13:02", content: "工单负责人更新为【刘畅】", operator: "系统" }
+      ]
+    };
+
+    const operationRecordsByEntity = {
+      "LD202610130003": [
+        { time: "2026-10-10 18:20:00", content: "张三人工将线索退回公海", operator: "张三" },
+        { time: "2026-10-12 00:10:00", content: "派单到期后由系统自动退回公海，累计退回 2 次，进入无效线索池", operator: "系统" }
+      ]
+    };
+
+    const seaColumns = [
+      { key: "id", label: "线索编号", width: 170, locked: true },
+      { key: "merchant", label: "商户名称", width: 230, locked: true },
+      { key: "tags", label: "标签", width: 140 },
+      { key: "phone", label: "联系电话1", width: 150 },
+      { key: "extraPhones", label: "联系电话2", width: 150 },
+      { key: "address", label: "地址", width: 220 },
+      { key: "sales", label: "电销员", width: 84 },
+      { key: "monthSales", label: "月售", width: 78 },
+      { key: "rating", label: "评分", width: 66 },
+      { key: "source", label: "线索来源", width: 96 },
+      { key: "reviews", label: "评价数", width: 76 },
+      { key: "goodReviews", label: "好评数", width: 76 },
+      { key: "badReviews", label: "差评数", width: 76 },
+      { key: "assignedAt", label: "派单时间", width: 152 },
+      { key: "createdAt", label: "创建时间", width: 152 },
+      { key: "actions", label: "操作", width: 170, locked: true }
+    ];
+
+    const leadColumns = [
+      { key: "id", label: "线索编号", width: 170, locked: true },
+      { key: "merchant", label: "商户名称", width: 230, locked: true },
+      { key: "tags", label: "标签", width: 140 },
+      { key: "phone", label: "联系电话1", width: 150 },
+      { key: "extraPhones", label: "联系电话2", width: 150 },
+      { key: "address", label: "地址", width: 220 },
+      { key: "remainingFollowDays", label: "剩余跟进时间", width: 112 },
+      { key: "monthSales", label: "月售", width: 78 },
+      { key: "rating", label: "评分", width: 66 },
+      { key: "source", label: "线索来源", width: 96 },
+      { key: "sales", label: "电销员", width: 84 },
+      { key: "reviews", label: "评价数", width: 76 },
+      { key: "goodReviews", label: "好评数", width: 76 },
+      { key: "badReviews", label: "差评数", width: 76 },
+      { key: "assignedAt", label: "派单时间", width: 152 },
+      { key: "createdAt", label: "创建时间", width: 152 },
+      { key: "note", label: "备注", width: 190 },
+      { key: "actions", label: "操作", width: 220, locked: true }
+    ];
+
+    const oppColumns = [
+      { key: "id", label: "商机编号", width: 170, locked: true },
+      { key: "merchant", label: "商户名称", width: 230, locked: true },
+      { key: "tags", label: "标签", width: 140 },
+      { key: "category", label: "品类", width: 90 },
+      { key: "phone", label: "联系电话1", width: 150 },
+      { key: "extraPhones", label: "联系电话2", width: 150 },
+      { key: "contact", label: "联系人", width: 82 },
+      { key: "address", label: "地址", width: 220 },
+      { key: "demand", label: "客户反馈", width: 210 },
+      { key: "groupBuilt", label: "是否建客户群", width: 110 },
+      { key: "intent", label: "意向度", width: 78 },
+      { key: "sales", label: "电销员", width: 82 },
+      { key: "workOwner", label: "工单负责人", width: 100 },
+      { key: "source", label: "线索来源", width: 84 },
+      { key: "status", label: "状态", width: 82 },
+      { key: "serviceOpened", label: "是否进入计费阶段", width: 140 },
+      { key: "serviceOpenAt", label: "开始计费时间", width: 152 },
+      { key: "creator", label: "创建人", width: 78 },
+      { key: "createdAt", label: "创建时间", width: 152 },
+      { key: "note", label: "备注", width: 190 },
+      { key: "actions", label: "操作", width: 118, locked: true }
+    ];
+
+    const state = {
+      view: "sea",
+      role: "manager",
+      listTabs: {
+        sea: "pool",
+        lead: "pending",
+        opp: "pending"
+      },
+      filters: {
+        sea: {},
+        lead: { tag: "" },
+        opp: {}
+      },
+      selection: {
+        sea: new Set(),
+        lead: new Set(),
+        opp: new Set()
+      },
+      drawer: null,
+      detailEdit: null,
+      detailPhoneDraft: null,
+      followSearch: "",
+      followMenu: null,
+      modal: null,
+      columnPanelScope: null,
+      regionPickerScope: null,
+      visibleColumns: {
+        sea: new Set(seaColumns.map(column => column.key)),
+        lead: new Set(leadColumns.map(column => column.key)),
+        opp: new Set(oppColumns.map(column => column.key))
+      }
+    };
+
+    const pageConfig = {
+      sea: { title: "线索公海", nav: "sea" },
+      lead: { title: "我的线索", nav: "lead" },
+      opp: { title: "商机列表", nav: "opp" }
+    };
+
+    const icon = name => `<svg><use href="#i-${name}"></use></svg>`;
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function maskPhone(phone) {
+      if (!phone || phone.length < 7) return phone || "--";
+      return `${phone.slice(0, 3)}****${phone.slice(-4)}`;
+    }
+
+    function formatDisplayTime(value) {
+      return value || "--";
+    }
+
+    function sourceBadge(source) {
+      return `<span class="source-badge ${sourceClass[source] || ""}">${escapeHtml(source)}</span>`;
+    }
+
+    function tagsHtml(tags = []) {
+      if (!tags.length) return "--";
+      const priorityTags = ["一面未转化", "到期释放"];
+      const orderedTags = [...tags].sort((left, right) => {
+        const leftPriority = priorityTags.includes(left) ? 0 : 1;
+        const rightPriority = priorityTags.includes(right) ? 0 : 1;
+        return leftPriority - rightPriority;
+      });
+      return `<div class="tag-list">${orderedTags.map(tag => `<span class="tag-badge ${priorityTags.includes(tag) ? "priority-tag" : ""}">${escapeHtml(tag)}</span>`).join("")}</div>`;
+    }
+
+    function leadStatus(status) {
+      return status === "pool"
+        ? `<span class="status-badge status-pool">待分配</span>`
+        : `<span class="status-badge status-assigned">已分配</span>`;
+    }
+
+    function oppStatus(status) {
+      const className = status === "已转化" ? "status-converted" : status === "无效" ? "status-invalid" : "status-pool";
+      return `<span class="status-badge ${className}">${escapeHtml(status)}</span>`;
+    }
+
+    function intentBadge(intent) {
+      const className = intent === "高" ? "intent-high" : intent === "中" ? "intent-medium" : "intent-low";
+      return `<span class="intent-badge ${className}">${escapeHtml(intent)}意向</span>`;
+    }
+
+    function phoneCell(phone) {
+      return `
+        <span class="phone-cell">
+          ${maskPhone(phone)}
+          <button class="copy-button" type="button" data-action="copy-phone" data-phone="${escapeHtml(phone)}" data-tooltip="复制电话" aria-label="复制电话">
+            ${icon("copy")}
+          </button>
+        </span>`;
+    }
+
+    function extraPhonesCell(phones = []) {
+      if (!phones.length) return "--";
+      return `<span class="phone-stack">${phones.map(phone => phoneCell(phone)).join("")}</span>`;
+    }
+
+    function listExtraPhoneCell(phones = []) {
+      return phones.length ? phoneCell(phones[0]) : "--";
+    }
+
+    function merchantCell(row) {
+      return `
+        <div class="merchant-cell">
+          <div class="merchant-primary">
+            <span class="merchant-name" title="${escapeHtml(row.merchant)}">${escapeHtml(row.merchant)}</span>
+          </div>
+          <span class="merchant-meta">${escapeHtml(row.contact || "未填写联系人")}</span>
+        </div>`;
+    }
+
+    function matchText(value, keyword) {
+      return !keyword || String(value || "").toLowerCase().includes(String(keyword).trim().toLowerCase());
+    }
+
+    function matchDate(value, startDate, endDate) {
+      if (!startDate && !endDate) return true;
+      const date = String(value || "").slice(0, 10);
+      if (!date) return false;
+      if (startDate && date < startDate) return false;
+      if (endDate && date > endDate) return false;
+      return true;
+    }
+
+    function matchesBaseFilters(row, filters) {
+      if (!matchText(row.id, filters.keyword)) return false;
+      if (!matchText(row.merchant, filters.merchant)) return false;
+      if (!matchText([row.phone, ...(row.extraPhones || [])].join(" "), filters.phone)) return false;
+      if (filters.province && row.province !== filters.province) return false;
+      if (filters.city && row.city !== filters.city) return false;
+      if (filters.district && row.district !== filters.district) return false;
+      if (filters.source && row.source !== filters.source) return false;
+      if (filters.tag && !(row.tags || []).includes(filters.tag)) return false;
+      if (!matchText(row.sales, filters.sales)) return false;
+      if (!matchDate(row.createdAt, filters.startDate, filters.endDate)) return false;
+      return true;
+    }
+
+    function getSeaRows() {
+      const expectedStatus = state.listTabs.sea === "assigned"
+        ? "assigned"
+        : state.listTabs.sea === "invalid"
+          ? "invalid"
+          : "pool";
+      return leads
+        .filter(row => row.status === expectedStatus && matchesBaseFilters(row, state.filters.sea))
+        .filter(row => matchDate(row.assignedAt, state.filters.sea.assignStartDate, state.filters.sea.assignEndDate))
+        .sort(compareSeaPriority);
+    }
+
+    function getLeadRows() {
+      const filters = state.filters.lead;
+      return leads
+        .filter(row => row.status === "assigned")
+        .filter(row => getLeadStage(row) === state.listTabs.lead)
+        .filter(row => state.role === "manager" || row.sales === CURRENT_USER)
+        .filter(row => matchesBaseFilters(row, filters))
+        .filter(row => {
+          if (filters.remainingDays === "" || filters.remainingDays === undefined) return true;
+          const remainingDays = getRemainingFollowDays(row);
+          return remainingDays === Number(filters.remainingDays);
+        })
+        .filter(row => matchDate(row.assignedAt, filters.assignStartDate, filters.assignEndDate))
+        .sort(compareLeadPriority);
+    }
+
+    function getRemainingFollowDays(row) {
+      if (!row.assignedAt) return 0;
+      const today = Date.parse("2026-10-14T00:00:00+08:00");
+      const assigned = Date.parse(`${row.assignedAt.replace(" ", "T")}+08:00`);
+      const elapsedDays = Math.floor((today - assigned) / 86400000);
+      return Math.max(0, 7 - elapsedDays);
+    }
+
+    function getLeadStage(row) {
+      if (row.leadSection === "pending") return "pending";
+      return "following";
+    }
+
+    function compareLeadPriority(left, right) {
+      const leftPriority = (left.tags || []).includes("一面未转化") ? 0 : 1;
+      const rightPriority = (right.tags || []).includes("一面未转化") ? 0 : 1;
+      if (leftPriority !== rightPriority) return leftPriority - rightPriority;
+      const assignedCompare = String(left.assignedAt || "9999").localeCompare(String(right.assignedAt || "9999"));
+      if (assignedCompare !== 0) return assignedCompare;
+      return String(left.createdAt).localeCompare(String(right.createdAt));
+    }
+
+    function compareSeaPriority(left, right) {
+      const priorityTags = ["到期释放", "无效线索"];
+      const leftPriority = (left.tags || []).some(tag => priorityTags.includes(tag)) ? 0 : 1;
+      const rightPriority = (right.tags || []).some(tag => priorityTags.includes(tag)) ? 0 : 1;
+      if (leftPriority !== rightPriority) return leftPriority - rightPriority;
+      return String(right.createdAt).localeCompare(String(left.createdAt));
+    }
+
+    function getOppRows() {
+      const filters = state.filters.opp;
+      return opportunities
+        .filter(row => state.listTabs.opp === "cooperating" ? row.serviceOpened === "已开通" : row.serviceOpened === "未开通")
+        .filter(row => matchText(row.merchant, filters.merchant))
+        .filter(row => !filters.province || row.province === filters.province)
+        .filter(row => !filters.city || row.city === filters.city)
+        .filter(row => !filters.district || row.district === filters.district)
+        .filter(row => matchText(row.category, filters.category))
+        .filter(row => !filters.source || row.source === filters.source)
+        .filter(row => matchText(row.creator, filters.creator))
+        .filter(row => matchText(row.contact, filters.contact))
+        .filter(row => matchText([row.phone, ...(row.extraPhones || [])].join(" "), filters.phone))
+        .filter(row => !filters.sales || matchText(row.sales, filters.sales))
+        .filter(row => matchText(row.workOwner, filters.workOwner))
+        .filter(row => !filters.groupBuilt || row.groupBuilt === filters.groupBuilt)
+        .filter(row => !filters.intent || row.intent === filters.intent)
+        .filter(row => !filters.signed || row.signed === filters.signed)
+        .filter(row => !filters.status || row.status === filters.status)
+        .filter(row => !filters.tag || (row.tags || []).includes(filters.tag))
+        .filter(row => matchDate(row.createdAt, filters.startDate, filters.endDate))
+        .filter(row => matchDate(row.serviceOpenAt, filters.serviceStartDate, filters.serviceEndDate));
+    }
+
+    const columnSets = {
+      sea: seaColumns,
+      lead: leadColumns,
+      opp: oppColumns
+    };
+
+    function getScopeRows(scope) {
+      if (scope === "sea") return getSeaRows();
+      if (scope === "lead") return getLeadRows();
+      return getOppRows();
+    }
+
+    function isColumnAvailable(scope, column) {
+      if (scope === "sea" && state.listTabs.sea !== "assigned" && column.key === "sales") {
+        return false;
+      }
+      return true;
+    }
+
+    function getVisibleColumns(scope) {
+      return columnSets[scope].filter(column => isColumnAvailable(scope, column) && state.visibleColumns[scope].has(column.key));
+    }
+
+    function actionButtons(row, scope) {
+      if (scope === "sea") {
+        return `
+          <div class="action-group">
+            <button class="link-button" type="button" data-action="open-lead-drawer" data-id="${row.id}">详情</button>
+            <span class="action-divider"></span>
+            <button class="link-button" type="button" data-action="assign" data-id="${row.id}" ${state.role !== "manager" ? "disabled" : ""}>分配</button>
+          </div>`;
+      }
+      if (scope === "lead") {
+        return `
+          <div class="action-group">
+            <button class="link-button" type="button" data-action="open-lead-drawer" data-id="${row.id}">详情</button>
+            <span class="action-divider"></span>
+            <button class="link-button" type="button" data-action="return-sea" data-id="${row.id}">退回公海</button>
+            <span class="action-divider"></span>
+            <button class="link-button" type="button" data-action="convert" data-id="${row.id}">转商机</button>
+          </div>`;
+      }
+      return `
+        <div class="action-group">
+          <button class="link-button" type="button" data-action="open-opp-drawer" data-id="${row.id}">详情</button>
+        </div>`;
+    }
+
+    function cellForColumn(row, column, scope) {
+      switch (column.key) {
+        case "id":
+          return `<span class="number">${escapeHtml(row.id)}</span>`;
+        case "merchant":
+          return `<div class="merchant-cell"><span class="merchant-name" title="${escapeHtml(row.merchant)}">${escapeHtml(row.merchant)}</span></div>`;
+        case "category":
+          return escapeHtml(row.category);
+        case "phone":
+          return phoneCell(row.phone);
+        case "extraPhones":
+          return listExtraPhoneCell(row.extraPhones || []);
+        case "contact":
+          return escapeHtml(row.contact);
+        case "address":
+          return `<span title="${escapeHtml(row.address)}">${escapeHtml(row.address)}</span>`;
+        case "remainingFollowDays": {
+          const days = getRemainingFollowDays(row);
+          return `<span class="days-badge ${days <= 1 ? "urgent" : days <= 3 ? "warning" : ""}">${days} 天</span>`;
+        }
+        case "demand":
+          return `<span title="${escapeHtml(row.demand)}">${escapeHtml(row.demand)}</span>`;
+        case "groupBuilt":
+          return row.groupBuilt === "是"
+            ? `<span class="status-badge status-assigned">是</span>`
+            : `<span class="status-badge status-invalid">否</span>`;
+        case "intent":
+          return intentBadge(row.intent);
+        case "monthSales":
+          return `<span class="number">${row.monthSales.toLocaleString()}</span>`;
+        case "rating":
+          return `<span class="rating">${row.rating.toFixed(1)}</span>`;
+        case "sales":
+          return escapeHtml(row.sales);
+        case "workOwner":
+          return escapeHtml(row.workOwner);
+        case "source":
+          return scope === "opp" ? `<span class="tag-badge">${escapeHtml(row.source)}</span>` : sourceBadge(row.source);
+        case "tags":
+          return tagsHtml(row.tags);
+        case "leadStatus":
+          return leadStatus(row.status);
+        case "status":
+          return oppStatus(row.status);
+        case "province":
+          return escapeHtml(row.province);
+        case "city":
+          return escapeHtml(row.city);
+        case "district":
+          return escapeHtml(row.district);
+        case "serviceOpened":
+          return row.serviceOpened === "已开通"
+            ? `<span class="status-badge status-assigned">是</span>`
+            : `<span class="status-badge status-invalid">否</span>`;
+        case "serviceOpenAt":
+          return escapeHtml(formatDisplayTime(row.serviceOpenAt));
+        case "creator":
+          return escapeHtml(row.creator);
+        case "createdAt":
+          return escapeHtml(row.createdAt);
+        case "assignedAt":
+          return escapeHtml(row.assignedAt || "--");
+        case "note":
+          return `<span title="${escapeHtml(row.note)}">${escapeHtml(row.note)}</span>`;
+        case "reviews":
+          return row.reviews ?? 0;
+        case "goodReviews":
+          return row.goodReviews ?? 0;
+        case "badReviews":
+          return row.badReviews ?? 0;
+        case "actions":
+          return actionButtons(row, scope);
+        default:
+          return "";
+      }
+    }
+
+    function renderConfigurableTable(scope) {
+      const rows = getScopeRows(scope);
+      const visibleColumns = getVisibleColumns(scope);
+      const table = document.getElementById(`${scope}Table`);
+      const totalWidth = visibleColumns.reduce((sum, column) => sum + column.width, 42);
+      table.style.minWidth = `${Math.max(totalWidth, 840)}px`;
+
+      document.getElementById(`${scope}Head`).innerHTML = `
+        <tr>
+          <th class="check-cell"><input type="checkbox" data-action="select-all" data-scope="${scope}" aria-label="全选"></th>
+          ${visibleColumns.map(column => `
+            <th class="${column.key === "actions" ? "sticky-action" : ""}" style="width:${column.width}px">${escapeHtml(column.label)}</th>`).join("")}
+        </tr>`;
+
+      document.getElementById(`${scope}Body`).innerHTML = rows.length ? rows.map(row => `
+        <tr>
+          <td class="check-cell"><input type="checkbox" data-action="select-row" data-scope="${scope}" data-id="${row.id}" ${state.selection[scope].has(row.id) ? "checked" : ""} aria-label="选择${escapeHtml(row.merchant)}"></td>
+          ${visibleColumns.map(column => `
+            <td class="${column.key === "actions" ? "sticky-action" : ""}">${cellForColumn(row, column, scope)}</td>`).join("")}
+        </tr>`).join("") : emptyRow(visibleColumns.length + 1);
+
+      document.getElementById(`${scope}Total`).textContent = `共 ${rows.length} 条`;
+      document.getElementById(`${scope}SelectedCount`).textContent = state.selection[scope].size;
+      const allCheckbox = document.querySelector(`[data-action="select-all"][data-scope="${scope}"]`);
+      if (allCheckbox) allCheckbox.checked = rows.length > 0 && rows.every(row => state.selection[scope].has(row.id));
+    }
+
+    function renderSeaTable() {
+      renderConfigurableTable("sea");
+    }
+
+    function renderLeadTable() {
+      renderConfigurableTable("lead");
+    }
+
+    function renderOppTable() {
+      renderConfigurableTable("opp");
+      document.getElementById("oppColumnSummary").textContent = `显示 ${getVisibleColumns("opp").length} / ${oppColumns.length} 列`;
+    }
+
+    function emptyRow(colspan) {
+      return `
+        <tr>
+          <td colspan="${colspan}">
+            <div class="empty-state">
+              <div class="empty-icon">${icon("inbox")}</div>
+              <strong>暂无数据</strong>
+              <span>当前条件下没有匹配记录</span>
+            </div>
+          </td>
+        </tr>`;
+    }
+
+    function renderTables() {
+      renderSeaTable();
+      renderLeadTable();
+      renderOppTable();
+    }
+
+    function renderColumnPanel() {
+      const root = document.getElementById("columnPanelRoot");
+      const scope = state.columnPanelScope;
+      if (!scope) {
+        root.innerHTML = "";
+        return;
+      }
+      const columns = columnSets[scope].filter(column => isColumnAvailable(scope, column));
+      const visibleColumns = state.visibleColumns[scope];
+      const trigger = document.querySelector(`[data-action="toggle-columns"][data-scope="${scope}"]`);
+      const triggerRect = trigger?.getBoundingClientRect();
+      const panelTop = triggerRect
+        ? Math.max(70, Math.min(triggerRect.bottom + 8, window.innerHeight - 390))
+        : 70;
+      const panelRight = triggerRect
+        ? Math.max(12, window.innerWidth - triggerRect.right)
+        : 22;
+
+      root.innerHTML = `
+        <div class="column-panel" style="top:${panelTop}px;right:${panelRight}px">
+          <strong>表头设置</strong>
+          <div class="column-options">
+            ${columns.map(column => `
+              <label class="column-option">
+                <input type="checkbox" data-action="column-option" data-scope="${scope}" value="${column.key}" ${visibleColumns.has(column.key) ? "checked" : ""} ${column.locked ? "disabled" : ""}>
+                <span>${escapeHtml(column.label)}</span>
+              </label>`).join("")}
+          </div>
+        </div>`;
+    }
+
+    function renderRegionFilters(scope) {
+      const root = document.querySelector(`[data-region-scope="${scope}"]`);
+      if (!root) return;
+      const filters = state.filters[scope] || {};
+      const province = filters.province || "";
+      const city = filters.city || "";
+      const district = filters.district || "";
+      const cities = province && addressHierarchy[province] ? Object.keys(addressHierarchy[province]) : [];
+      const districts = province && city && addressHierarchy[province]?.[city]
+        ? addressHierarchy[province][city]
+        : [];
+      const summary = district || city || province || "全部地区";
+
+      root.innerHTML = `
+        <div class="region-picker ${state.regionPickerScope === scope ? "open" : ""}">
+          <button class="region-picker-trigger" type="button" data-action="toggle-region-picker" data-scope="${scope}" aria-expanded="${state.regionPickerScope === scope}">
+            <span>${escapeHtml(summary)}</span>
+            ${icon("chevron-down")}
+          </button>
+          <div class="region-picker-popover">
+            <div class="region-picker-columns">
+              <div class="region-column">
+                <button class="region-option ${!province ? "active" : ""}" type="button" data-action="select-region" data-scope="${scope}" data-level="province" data-value="">全部省份</button>
+                ${Object.keys(addressHierarchy).map(item => `
+                  <button class="region-option ${province === item ? "active" : ""}" type="button" data-action="select-region" data-scope="${scope}" data-level="province" data-value="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("")}
+              </div>
+              <div class="region-column">
+                <button class="region-option ${province && !city ? "active" : ""}" type="button" data-action="select-region" data-scope="${scope}" data-level="city" data-value="" ${province ? "" : "disabled"}>全部城市</button>
+                ${cities.map(item => `
+                  <button class="region-option ${city === item ? "active" : ""}" type="button" data-action="select-region" data-scope="${scope}" data-level="city" data-value="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("")}
+              </div>
+              <div class="region-column">
+                <button class="region-option ${city && !district ? "active" : ""}" type="button" data-action="select-region" data-scope="${scope}" data-level="district" data-value="" ${city ? "" : "disabled"}>全部区县</button>
+                ${districts.map(item => `
+                  <button class="region-option ${district === item ? "active" : ""}" type="button" data-action="select-region" data-scope="${scope}" data-level="district" data-value="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("")}
+              </div>
+            </div>
+            <div class="region-picker-footer">
+              <button class="btn small" type="button" data-action="clear-region" data-scope="${scope}">清空</button>
+              <button class="btn small primary" type="button" data-action="close-region-picker">确定</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function initRegionFilters() {
+      ["sea", "lead", "opp"].forEach(renderRegionFilters);
+    }
+
+    function selectRegion(scope, level, value) {
+      state.filters[scope].province = state.filters[scope].province || "";
+      state.filters[scope].city = state.filters[scope].city || "";
+      state.filters[scope].district = state.filters[scope].district || "";
+      if (level === "province") {
+        state.filters[scope].province = value;
+        state.filters[scope].city = "";
+        state.filters[scope].district = "";
+      }
+      if (level === "city") {
+        state.filters[scope].city = value;
+        state.filters[scope].district = "";
+      }
+      if (level === "district") {
+        state.filters[scope].district = value;
+      }
+      state.regionPickerScope = scope;
+      renderRegionFilters(scope);
+    }
+
+    function renderListTabs() {
+      document.querySelectorAll('[data-action="switch-list-tab"]').forEach(tab => {
+        const scope = tab.dataset.scope;
+        tab.classList.toggle("active", state.listTabs[scope] === tab.dataset.tab);
+      });
+
+      const seaPoolCount = leads.filter(row => row.status === "pool").length;
+      const seaAssignedCount = leads.filter(row => row.status === "assigned").length;
+      const seaInvalidCount = leads.filter(row => row.status === "invalid").length;
+      const leadPendingCount = leads.filter(row => row.status === "assigned" && getLeadStage(row) === "pending").length;
+      const leadFollowingCount = leads.filter(row => row.status === "assigned" && getLeadStage(row) === "following").length;
+      const oppCooperatingCount = opportunities.filter(row => row.serviceOpened === "已开通").length;
+      const oppPendingCount = opportunities.filter(row => row.serviceOpened === "未开通").length;
+
+      document.getElementById("seaPoolTabCount").textContent = seaPoolCount;
+      document.getElementById("seaAssignedTabCount").textContent = seaAssignedCount;
+      document.getElementById("seaInvalidTabCount").textContent = seaInvalidCount;
+      document.getElementById("leadPendingTabCount").textContent = leadPendingCount;
+      document.getElementById("leadFollowingTabCount").textContent = leadFollowingCount;
+      document.getElementById("oppCooperatingTabCount").textContent = oppCooperatingCount;
+      document.getElementById("oppPendingTabCount").textContent = oppPendingCount;
+
+      const batchButton = document.querySelector('[data-action="batch-assign"]');
+      if (batchButton) {
+        const showBatchAssign = state.role === "manager" && ["pool", "assigned", "invalid"].includes(state.listTabs.sea);
+        batchButton.style.display = showBatchAssign ? "" : "none";
+      }
+
+      const seaSalesField = document.getElementById("seaSalesField");
+      if (seaSalesField) seaSalesField.style.display = state.listTabs.sea === "assigned" ? "" : "none";
+    }
+
+    function navigate(view) {
+      state.view = view;
+      state.columnPanelScope = null;
+      if (view === "sea") state.detailEdit = null;
+      document.querySelectorAll(".page").forEach(page => page.classList.toggle("active", page.dataset.page === view));
+      document.querySelectorAll("[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === view));
+      document.getElementById("breadcrumbCurrent").textContent = pageConfig[view].title;
+      document.getElementById("screen").scrollTop = 0;
+      renderAll();
+    }
+
+    function renderAll() {
+      renderTables();
+      renderColumnPanel();
+      renderListTabs();
+      document.getElementById("leadPageSubtitle").textContent = state.role === "manager"
+        ? "电销主管可查看并调整团队线索"
+        : "当前仅展示分配给张三的线索";
+    }
+
+    function openModal(type, payload = {}) {
+      state.modal = { type, ...payload };
+      renderModal();
+    }
+
+    function closeModal() {
+      state.modal = null;
+      document.getElementById("modalRoot").classList.remove("open");
+      document.getElementById("modalRoot").innerHTML = "";
+    }
+
+    function modalShell({ title, body, footer = "", size = "" }) {
+      return `
+        <div class="modal ${size}" role="dialog" aria-modal="true" aria-label="${escapeHtml(title)}">
+          <div class="modal-head">
+            <h3>${escapeHtml(title)}</h3>
+            <button class="icon-button" type="button" data-action="close-modal" aria-label="关闭">${icon("x")}</button>
+          </div>
+          <div class="modal-body">${body}</div>
+          ${footer ? `<div class="modal-footer">${footer}</div>` : ""}
+        </div>`;
+    }
+
+    function editTagChoices(selectedTags, context = "modal") {
+      const protectedTags = ["一面未转化", "到期释放"];
+      const pickerId = context === "detail" ? "detailTagPicker" : "editTagPicker";
+      return `
+        <div class="tag-picker" id="${pickerId}">
+          <button class="tag-picker-trigger" type="button" data-action="toggle-tag-picker" aria-expanded="false">
+            <span class="tag-picker-value">${selectedTags.length ? escapeHtml(selectedTags.join("、")) : "请选择标签"}</span>
+            ${icon("chevron-down")}
+          </button>
+          <div class="tag-picker-popover">
+            <div class="tag-picker-search">
+              ${icon("search")}
+              <input type="text" data-action="tag-search" placeholder="搜索标签">
+            </div>
+            <div class="tag-option-list">
+              ${tagOptions.map(tag => `
+                <label class="tag-option ${protectedTags.includes(tag) && selectedTags.includes(tag) ? "system-tag" : ""}" data-tag-text="${escapeHtml(tag)}">
+                  <input type="checkbox" data-action="toggle-edit-tag" data-edit-context="${context}" value="${escapeHtml(tag)}" ${selectedTags.includes(tag) ? "checked" : ""} ${protectedTags.includes(tag) && selectedTags.includes(tag) ? "disabled" : ""}>
+                  <span>${escapeHtml(tag)}${protectedTags.includes(tag) && selectedTags.includes(tag) ? "（系统）" : ""}</span>
+                </label>`).join("")}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function openEdit(entity, id) {
+      const record = entity === "opp"
+        ? opportunities.find(item => item.id === id)
+        : leads.find(item => item.id === id);
+      if (!record) return;
+      openModal("edit", {
+        entity,
+        id,
+        tags: [...(record.tags || [])],
+        extraPhones: [],
+        phoneDraftOpen: false
+      });
+    }
+
+    function submitEdit(form) {
+      if (!state.modal) return;
+      const tags = [...state.modal.tags];
+      const extraPhones = [...state.modal.extraPhones];
+      const editedId = state.modal.id;
+      const editedEntity = state.modal.entity;
+      const record = editedEntity === "opp"
+        ? opportunities.find(item => item.id === editedId)
+        : leads.find(item => item.id === editedId);
+      if (!record) return;
+      record.tags = tags;
+      record.extraPhones = [...(record.extraPhones || []), ...extraPhones];
+      toast(`${editedEntity === "opp" ? "商机" : "线索"}标签与联系电话已更新`);
+
+      const drawerId = state.drawer?.id;
+      closeModal();
+      renderAll();
+      if (drawerId === editedId && state.drawer?.type === editedEntity) renderDrawer();
+    }
+
+    function renderModal() {
+      const root = document.getElementById("modalRoot");
+      if (!state.modal) {
+        root.classList.remove("open");
+        root.innerHTML = "";
+        return;
+      }
+
+      root.classList.add("open");
+      const { type } = state.modal;
+
+      if (type === "edit") {
+        const isOpportunity = state.modal.entity === "opp";
+        const record = isOpportunity
+          ? opportunities.find(item => item.id === state.modal.id)
+          : leads.find(item => item.id === state.modal.id);
+        if (!record) {
+          closeModal();
+          return;
+        }
+        const selectedTags = state.modal.tags || [];
+        const extraPhones = state.modal.extraPhones || [];
+        root.innerHTML = modalShell({
+          title: "编辑",
+          size: "wide",
+          body: `
+            <form id="editForm" class="form-grid">
+              <div class="field full">
+                <label>标签</label>
+                <div class="tag-filter">${editTagChoices(selectedTags)}</div>
+              </div>
+              <div class="field full">
+                <label>联系电话</label>
+                <div class="phone-edit-list">
+                  <div class="phone-edit-row">
+                    <span>电话1</span>
+                    <input type="text" value="${escapeHtml(record.phone || "")}" readonly placeholder="请输入">
+                    <button class="btn small" type="button" data-action="add-edit-phone" data-mode="open">新增</button>
+                  </div>
+                  ${extraPhones.map((phone, index) => `
+                    <div class="phone-edit-row">
+                      <span>电话${index + 2}</span>
+                      <input type="text" value="${escapeHtml(phone)}" readonly placeholder="请输入">
+                      <span></span>
+                    </div>`).join("")}
+                  ${state.modal.phoneDraftOpen ? `
+                    <div class="phone-edit-row">
+                      <span>电话${extraPhones.length + 2}</span>
+                      <input id="extraPhoneInput" type="text" placeholder="请输入联系电话">
+                      <button class="btn small" type="button" data-action="add-edit-phone" data-mode="commit">新增</button>
+                    </div>` : ""}
+                </div>
+              </div>
+            </form>`,
+          footer: `
+            <button class="btn" type="button" data-action="close-modal">取消</button>
+            <button class="btn primary" type="submit" form="editForm">保存</button>`
+        });
+      }
+
+      if (type === "edit-legacy") {
+        const isOpportunity = state.modal.entity === "opp";
+        const record = isOpportunity
+          ? opportunities.find(item => item.id === state.modal.id)
+          : leads.find(item => item.id === state.modal.id);
+        if (!record) {
+          closeModal();
+          return;
+        }
+        const selectedTags = state.modal.tags || [];
+        const leadFields = `
+          <div class="field">
+            <label class="required" for="editMerchant">商户名称</label>
+            <input id="editMerchant" name="merchant" type="text" value="${escapeHtml(record.merchant)}" required placeholder="请输入">
+          </div>
+          <div class="field">
+            <label for="editContact">联系人</label>
+            <input id="editContact" name="contact" type="text" value="${escapeHtml(record.contact || "")}" placeholder="请输入">
+          </div>
+          <div class="field">
+            <label class="required" for="editPhone">电话</label>
+            <input id="editPhone" name="phone" type="text" value="${escapeHtml(record.phone || "")}" required placeholder="请输入">
+          </div>
+          <div class="field">
+            <label for="editSource">线索来源</label>
+            <select id="editSource" name="source">
+              ${["美团外卖", "淘宝闪购", "京东秒送"].map(source => `<option value="${source}" ${record.source === source ? "selected" : ""}>${source}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field full">
+            <label for="editAddress">地址</label>
+            <input id="editAddress" name="address" type="text" value="${escapeHtml(record.address || "")}" placeholder="请输入">
+          </div>
+          <div class="field">
+            <label for="editMonthSales">月售</label>
+            <input id="editMonthSales" name="monthSales" type="text" inputmode="numeric" value="${record.monthSales}" placeholder="请输入">
+          </div>
+          <div class="field">
+            <label for="editRating">评分</label>
+            <input id="editRating" name="rating" type="text" inputmode="decimal" value="${record.rating}" placeholder="请输入">
+          </div>
+          <div class="field full">
+            <label for="editNote">备注</label>
+            <input id="editNote" name="note" type="text" value="${escapeHtml(record.note || "")}" placeholder="请输入">
+          </div>`;
+
+        const opportunityFields = `
+          <div class="field">
+            <label class="required" for="editMerchant">商户名称</label>
+            <input id="editMerchant" name="merchant" type="text" value="${escapeHtml(record.merchant)}" required placeholder="请输入">
+          </div>
+          <div class="field">
+            <label for="editCategory">品类</label>
+            <input id="editCategory" name="category" type="text" value="${escapeHtml(record.category || "")}" placeholder="请输入">
+          </div>
+          <div class="field">
+            <label for="editContact">联系人</label>
+            <input id="editContact" name="contact" type="text" value="${escapeHtml(record.contact || "")}" placeholder="请输入">
+          </div>
+          <div class="field">
+            <label class="required" for="editPhone">联系电话</label>
+            <input id="editPhone" name="phone" type="text" value="${escapeHtml(record.phone || "")}" required placeholder="请输入">
+          </div>
+          <div class="field full">
+            <label for="editAddress">地址</label>
+            <input id="editAddress" name="address" type="text" value="${escapeHtml(record.address || "")}" placeholder="请输入">
+          </div>
+          <div class="field full">
+            <label for="editDemand">客户反馈</label>
+            <textarea id="editDemand" name="demand" style="min-height:88px" placeholder="请输入">${escapeHtml(record.demand || "")}</textarea>
+          </div>
+          <div class="field">
+            <label for="editGroupBuilt">是否建客户群</label>
+            <select id="editGroupBuilt" name="groupBuilt">
+              <option value="是" ${record.groupBuilt === "是" ? "selected" : ""}>是</option>
+              <option value="否" ${record.groupBuilt === "否" ? "selected" : ""}>否</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="editIntent">意向度</label>
+            <select id="editIntent" name="intent">
+              ${["高", "中", "低"].map(intent => `<option value="${intent}" ${record.intent === intent ? "selected" : ""}>${intent}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <label for="editWorkOwner">工单负责人</label>
+            <select id="editWorkOwner" name="workOwner">
+              ${["未分配", "刘畅", "许文", "王珂"].map(owner => `<option value="${owner}" ${record.workOwner === owner ? "selected" : ""}>${owner}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <label for="editStatus">状态</label>
+            <select id="editStatus" name="status">
+              ${["未转化", "已转化", "无效"].map(status => `<option value="${status}" ${record.status === status ? "selected" : ""}>${status}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <label for="editSource">线索来源</label>
+            <select id="editSource" name="source">
+              ${["电销", "渠道"].map(source => `<option value="${source}" ${record.source === source ? "selected" : ""}>${source}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field full">
+            <label for="editNote">备注</label>
+            <input id="editNote" name="note" type="text" value="${escapeHtml(record.note || "")}" placeholder="请输入">
+          </div>`;
+
+        root.innerHTML = modalShell({
+          title: isOpportunity ? "编辑商机" : "编辑线索",
+          size: "wide",
+          body: `
+            <form id="editForm" class="form-grid">
+              ${isOpportunity ? opportunityFields : leadFields}
+              <div class="field full">
+                <label>标签</label>
+                <div class="tag-filter">
+                  ${editTagChoices(selectedTags)}
+                </div>
+              </div>
+            </form>`,
+          footer: `
+            <button class="btn" type="button" data-action="close-modal">取消</button>
+            <button class="btn primary" type="submit" form="editForm">保存</button>`
+        });
+      }
+
+      if (type === "assign") {
+        const selected = state.modal.selected || "张三";
+        const regions = [...new Set(salesPeople.map(person => person.region))];
+        root.innerHTML = modalShell({
+          title: state.modal.source === "batch" ? "批量分配" : "分配",
+          size: "assign-modal",
+          body: `
+            <div class="field">
+              <label class="required">电销员</label>
+              <div class="assign-search-wrap">
+                ${icon("search")}
+                <input type="text" data-action="assign-search" placeholder="输入姓名、区域或组织关键字">
+              </div>
+              <div class="assign-org-list" id="assignOrgList">
+                ${regions.map(region => {
+                  const regionPeople = salesPeople.filter(person => person.region === region);
+                  const teams = [...new Set(regionPeople.map(person => person.team))];
+                  return `
+                    <section class="assign-region" data-assign-region>
+                      <div class="assign-region-title">${escapeHtml(region)}</div>
+                      ${teams.map(team => `
+                        <div class="assign-team" data-assign-team>
+                          <div class="assign-team-title">${escapeHtml(team)}</div>
+                          ${regionPeople.filter(person => person.team === team).map(person => `
+                            <label class="assign-person ${selected === person.name ? "selected" : ""}" data-assign-search-text="${escapeHtml(`${person.name} ${person.region} ${person.team}`)}">
+                              <input type="radio" name="assignee" value="${person.name}" ${selected === person.name ? "checked" : ""}>
+                              <span class="radio-mark"></span>
+                              <span class="assign-person-copy">
+                                <strong>${escapeHtml(person.name)}</strong>
+                                <span>${escapeHtml(person.load)}</span>
+                              </span>
+                            </label>`).join("")}
+                        </div>`).join("")}
+                    </section>`;
+                }).join("")}
+                <div class="assign-empty" id="assignEmpty" style="display:none">暂无匹配的电销员</div>
+              </div>
+            </div>`,
+          footer: `
+            <button class="btn" type="button" data-action="close-modal">取消</button>
+            <button class="btn primary" type="button" data-action="confirm-assign">确定</button>`
+        });
+      }
+
+      if (type === "return") {
+        const lead = leads.find(item => item.id === state.modal.id);
+        root.innerHTML = modalShell({
+          title: "退回公海",
+          size: "return-modal",
+          body: `
+            <div class="modal-body-centered">
+              <p class="confirm-copy">是否确定将 <strong>【${escapeHtml(lead?.merchant || "")}】</strong> 退回至公海？</p>
+            </div>`,
+          footer: `
+            <button class="btn" type="button" data-action="close-modal">取消</button>
+            <button class="btn primary" type="button" data-action="confirm-return">确定</button>`
+        });
+      }
+
+      if (type === "convert") {
+        const lead = leads.find(item => item.id === state.modal.id);
+        if (!Array.isArray(state.modal.extraPhones)) {
+          state.modal.extraPhones = [];
+        }
+        if (typeof state.modal.phoneDraftOpen !== "boolean") {
+          state.modal.phoneDraftOpen = false;
+        }
+        const extraPhones = state.modal.extraPhones || [];
+        root.innerHTML = modalShell({
+          title: "新增商机",
+          size: "wide",
+          body: `
+            <form id="convertForm" class="form-grid">
+              <div class="field">
+                <label for="convertMerchant">商户名称</label>
+                <input id="convertMerchant" name="merchant" type="text" value="${escapeHtml(lead?.merchant || "")}" readonly required placeholder="请输入">
+              </div>
+              <div class="field">
+                <label class="required" for="convertContact">联系人</label>
+                <input id="convertContact" name="contact" type="text" value="${escapeHtml(lead?.contact || "")}" required placeholder="请输入">
+              </div>
+              <div class="field full">
+                <label>联系电话</label>
+                <div class="phone-edit-list">
+                  <div class="phone-edit-row">
+                    <span>电话1</span>
+                    <input name="phone" type="text" value="${escapeHtml(lead?.phone || "")}" readonly required placeholder="请输入">
+                    <button class="btn small" type="button" data-action="add-convert-phone" data-mode="open">新增</button>
+                  </div>
+                  ${extraPhones.map((phone, index) => `
+                    <div class="phone-edit-row">
+                      <span>电话${index + 2}</span>
+                      <input type="text" value="${escapeHtml(phone)}" readonly placeholder="请输入">
+                      <span></span>
+                    </div>`).join("")}
+                  ${state.modal.phoneDraftOpen ? `
+                    <div class="phone-edit-row">
+                      <span>电话${extraPhones.length + 2}</span>
+                      <input id="convertExtraPhoneInput" type="text" placeholder="请输入联系电话">
+                      <button class="btn small" type="button" data-action="add-convert-phone" data-mode="commit">新增</button>
+                    </div>` : ""}
+                </div>
+              </div>
+              <div class="field">
+                <label for="convertCategory">品类</label>
+                <input id="convertCategory" name="category" type="text" placeholder="请输入商户品类">
+              </div>
+              <div class="field full">
+                <label for="convertAddress">地址</label>
+                <input id="convertAddress" name="address" type="text" value="${escapeHtml(lead?.address || "")}" readonly required placeholder="请输入">
+              </div>
+              <div class="field full">
+                <label class="required" for="convertDemand">客户反馈（与商家沟通的核心内容）</label>
+                <textarea id="convertDemand" name="demand" required placeholder="请输入客户反馈" style="min-height:94px">${escapeHtml(lead?.note || "")}</textarea>
+              </div>
+              <div class="field">
+                <label class="required" for="convertGroup">是否建客户群</label>
+                <select id="convertGroup" name="groupBuilt" required>
+                  <option value="是">是</option>
+                  <option value="否" selected>否</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="required" for="convertIntent">意向度</label>
+                <select id="convertIntent" name="intent" required>
+                  <option value="高">高</option>
+                  <option value="中" selected>中</option>
+                  <option value="低">低</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label for="convertNote">备注</label>
+                <input id="convertNote" name="note" type="text" value="${escapeHtml(lead?.note || "")}" placeholder="请输入">
+              </div>
+            </form>`,
+          footer: `
+            <button class="btn" type="button" data-action="close-modal">取消</button>
+            <button class="btn primary" type="submit" form="convertForm">确认转商机</button>`
+        });
+      }
+
+      if (type === "new-opp") {
+        root.innerHTML = modalShell({
+          title: "新增商机",
+          size: "wide",
+          body: `
+            <form id="newOppForm" class="form-grid">
+              <div class="field">
+                <label class="required" for="newOppMerchant">商户名称</label>
+                <input id="newOppMerchant" name="merchant" type="text" required placeholder="请输入">
+              </div>
+              <div class="field">
+                <label class="required" for="newOppContact">联系人</label>
+                <input id="newOppContact" name="contact" type="text" required placeholder="请输入">
+              </div>
+              <div class="field">
+                <label class="required" for="newOppPhone">联系电话</label>
+                <input id="newOppPhone" name="phone" type="text" required placeholder="请输入">
+              </div>
+              <div class="field">
+                <label for="newOppCategory">品类</label>
+                <input id="newOppCategory" name="category" type="text" value="餐饮" placeholder="请输入">
+              </div>
+              <div class="field full">
+                <label class="required" for="newOppAddress">地址</label>
+                <input id="newOppAddress" name="address" type="text" required placeholder="请输入">
+              </div>
+              <div class="field full">
+                <label class="required" for="newOppDemand">客户反馈（与商家沟通的核心内容）</label>
+                <textarea id="newOppDemand" name="demand" style="min-height:88px" required placeholder="请输入"></textarea>
+              </div>
+              <div class="field">
+                <label class="required" for="newOppGroup">是否建客户群</label>
+                <select id="newOppGroup" name="groupBuilt" required>
+                  <option value="是">是</option>
+                  <option value="否" selected>否</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="required" for="newOppIntent">意向度</label>
+                <select id="newOppIntent" name="intent" required>
+                  <option value="高">高</option>
+                  <option value="中" selected>中</option>
+                  <option value="低">低</option>
+                </select>
+              </div>
+            </form>`,
+          footer: `
+            <button class="btn" type="button" data-action="close-modal">取消</button>
+            <button class="btn primary" type="submit" form="newOppForm">保存</button>`
+        });
+      }
+
+      if (type === "import-opp") {
+        root.innerHTML = modalShell({
+          title: "导入商机",
+          body: `
+            <div class="field">
+              <label>选择文件</label>
+              <input id="importOppFile" type="file" accept=".xlsx,.xls,.csv">
+              <div class="field-note">支持 Excel 或 CSV 文件。</div>
+            </div>`,
+          footer: `
+            <button class="btn" type="button" data-action="close-modal">取消</button>
+            <button class="btn primary" type="button" data-action="confirm-import-opp">确认导入</button>`
+        });
+      }
+
+      if (type === "follow") {
+        const record = state.modal.record || {};
+        const content = record.content || "";
+        const followType = state.modal.followType || record.type || "需求沟通中";
+        const showFollowControls = state.view !== "sea";
+        const showConvertFields = showFollowControls && followType === "转商机";
+        const showReturnSea = showFollowControls && state.drawer?.type === "lead" && followType === "无合作意向";
+        root.innerHTML = modalShell({
+          title: state.modal.mode === "edit" ? "编辑跟进记录" : "新增跟进记录",
+          body: `
+            <div class="form-grid">
+              ${showFollowControls ? `
+                <div class="field full">
+                  <label class="required" for="followType">类型</label>
+                  <select id="followType" data-action="follow-type-select">
+                    ${["需求沟通中", "转商机", "无合作意向"].map(item => `<option value="${item}" ${followType === item ? "selected" : ""}>${item}</option>`).join("")}
+                  </select>
+                </div>
+                ${state.drawer?.type === "lead" ? `
+                  <div class="field full" id="followReturnSeaField" style="display:${showReturnSea ? "" : "none"}">
+                    <label for="followReturnSea">是否退回公海</label>
+                    <select id="followReturnSea">
+                      <option value="否">否</option>
+                      <option value="是">是</option>
+                    </select>
+                  </div>` : ""}
+                <div class="field full follow-convert-fields" id="followConvertFields" style="display:${showConvertFields ? "contents" : "none"}">
+                  <div class="field">
+                    <label class="required" for="followContact">联系人</label>
+                    <input id="followContact" type="text" value="${escapeHtml(record.contact || "")}" ${showConvertFields ? "required" : ""} placeholder="请输入">
+                  </div>
+                  <div class="field">
+                    <label for="followCategory">品类</label>
+                    <input id="followCategory" type="text" value="${escapeHtml(record.category || "")}" placeholder="请输入">
+                  </div>
+                  <div class="field full">
+                    <label class="required" for="followDemand">客户反馈（与客户沟通的核心内容）</label>
+                    <textarea id="followDemand" style="min-height:88px" ${showConvertFields ? "required" : ""} placeholder="请输入">${escapeHtml(record.demand || "")}</textarea>
+                  </div>
+                  <div class="field">
+                    <label class="required" for="followGroupBuilt">是否建客户群</label>
+                    <select id="followGroupBuilt" ${showConvertFields ? "required" : ""}>
+                      <option value="是" ${record.groupBuilt === "是" ? "selected" : ""}>是</option>
+                      <option value="否" ${record.groupBuilt !== "是" ? "selected" : ""}>否</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label class="required" for="followIntent">意向度</label>
+                    <select id="followIntent" ${showConvertFields ? "required" : ""}>
+                      ${["高", "中", "低"].map(item => `<option value="${item}" ${record.intent === item ? "selected" : ""}>${item}</option>`).join("")}
+                    </select>
+                  </div>
+                </div>` : ""}
+              <div class="field full" id="followContentField" style="display:${showConvertFields ? "none" : ""}">
+                <label class="required" for="followContent">内容</label>
+                <textarea id="followContent" maxlength="2000" placeholder="请输入跟进内容">${escapeHtml(content)}</textarea>
+                <div class="char-counter" id="followCounter">${content.length}/2000</div>
+              </div>
+            </div>`,
+          footer: `
+            <button class="btn" type="button" data-action="close-modal">取消</button>
+            <button class="btn primary" type="button" data-action="save-follow">保存</button>`
+        });
+      }
+
+      if (type === "delete-follow") {
+        root.innerHTML = modalShell({
+          title: "删除跟进记录",
+          size: "small",
+          body: `<p class="confirm-copy">删除后无法恢复，是否确认删除这条跟进记录？</p>`,
+          footer: `
+            <button class="btn" type="button" data-action="close-modal">取消</button>
+            <button class="btn danger" type="button" data-action="confirm-delete-follow">删除</button>`
+        });
+      }
+    }
+
+    function startDetailEdit(record, isLead) {
+      state.detailEdit = {
+        entity: isLead ? "lead" : "opp",
+        id: record.id,
+        tags: [...(record.tags || [])]
+      };
+      renderDrawer();
+    }
+
+    function cancelDetailEdit() {
+      state.detailEdit = null;
+      renderDrawer();
+    }
+
+    function saveDetailEdit() {
+      if (!state.detailEdit) return;
+      const record = state.detailEdit.entity === "opp"
+        ? opportunities.find(item => item.id === state.detailEdit.id)
+        : leads.find(item => item.id === state.detailEdit.id);
+      if (!record) return;
+      record.tags = [...state.detailEdit.tags];
+      state.detailEdit = null;
+      renderAll();
+      renderDrawer();
+      toast("标签和联系电话已更新");
+    }
+
+    function openDrawer(type, id) {
+      state.drawer = { type, id };
+      state.detailEdit = null;
+      state.detailPhoneDraft = null;
+      state.followSearch = "";
+      state.followMenu = null;
+      renderDrawer();
+    }
+
+    function closeDrawer() {
+      state.drawer = null;
+      state.detailEdit = null;
+      state.detailPhoneDraft = null;
+      state.followMenu = null;
+      document.getElementById("drawerRoot").innerHTML = "";
+      document.getElementById("drawerScrim").classList.remove("open");
+    }
+
+    function renderDrawer() {
+      const root = document.getElementById("drawerRoot");
+      const scrim = document.getElementById("drawerScrim");
+      if (!state.drawer) {
+        root.innerHTML = "";
+        scrim.classList.remove("open");
+        return;
+      }
+
+      const isLead = state.drawer.type === "lead";
+      const record = isLead
+        ? leads.find(item => item.id === state.drawer.id)
+        : opportunities.find(item => item.id === state.drawer.id);
+      if (!record) {
+        closeDrawer();
+        return;
+      }
+
+      scrim.classList.add("open");
+      const editingDetail = state.detailEdit?.id === record.id && state.detailEdit?.entity === (isLead ? "lead" : "opp");
+      const showSeaAssign = isLead
+        && state.view === "sea"
+        && state.listTabs.sea === "pool"
+        && record.status === "pool"
+        && state.role === "manager";
+      const canEditDetail = state.view !== "sea";
+      const detailActions = editingDetail
+        ? `
+          <button class="btn small" type="button" data-action="cancel-detail-edit">取消</button>
+          <button class="btn small primary" type="button" data-action="save-detail-edit">保存</button>`
+        : `
+          ${showSeaAssign ? `<button class="btn small outline-pill" type="button" data-action="assign" data-id="${record.id}" data-source="sea">分配</button>` : ""}
+          ${canEditDetail ? `<button class="btn small outline-pill" type="button" data-action="start-detail-edit">编辑</button>` : ""}`;
+
+      root.innerHTML = `
+        <aside class="drawer open" role="dialog" aria-modal="true" aria-label="${escapeHtml(record.merchant)}详情">
+          <div class="drawer-head">
+            <div class="drawer-title-row">
+              <div class="drawer-merchant">
+                <div class="entity-icon">${icon(isLead ? "building" : "briefcase")}</div>
+                <div>
+                  <h2>${escapeHtml(record.merchant)}</h2>
+                  <p>${isLead ? "线索编号" : "商机编号"}：${escapeHtml(record.id)}</p>
+                </div>
+              </div>
+              <div class="drawer-actions">
+                ${detailActions}
+                <button class="icon-button" type="button" data-action="close-drawer" data-tooltip="关闭" aria-label="关闭">${icon("x")}</button>
+              </div>
+            </div>
+          </div>
+          <div class="drawer-content-grid">
+            <div class="drawer-main">
+              ${renderDrawerBasic(record, isLead)}
+              ${renderOperations(isLead)}
+            </div>
+            <aside class="drawer-side">
+              ${renderFollowPanel(record.id)}
+            </aside>
+          </div>
+        </aside>`;
+    }
+
+    function detailPhoneManager(record) {
+      const draftOpen = state.detailPhoneDraft?.id === record.id;
+      const editing = state.detailEdit?.id === record.id;
+      const phones = record.extraPhones || [];
+      if (state.view === "sea") {
+        return `
+          <div class="phone-edit-list">
+            <div class="phone-edit-row">
+              <span>联系电话</span>
+              <input type="text" value="${escapeHtml(record.phone || "")}" readonly placeholder="请输入">
+              <span></span>
+            </div>
+            ${phones.map((phone, index) => `
+              <div class="phone-edit-row">
+                <span>电话${index + 2}</span>
+                <input type="text" value="${escapeHtml(phone)}" readonly placeholder="请输入">
+                <span></span>
+              </div>`).join("")}
+          </div>`;
+      }
+      return `
+        <div class="phone-edit-list">
+          <div class="phone-edit-row">
+            <span>电话1</span>
+            <input type="text" value="${escapeHtml(record.phone || "")}" readonly placeholder="请输入">
+            ${editing ? `<button class="btn small" type="button" data-action="open-detail-phone">新增</button>` : `<span></span>`}
+          </div>
+          ${phones.map((phone, index) => `
+            <div class="phone-edit-row">
+              <span>电话${index + 2}</span>
+              <input type="text" value="${escapeHtml(phone)}" readonly placeholder="请输入">
+              ${editing ? `<button class="btn small danger" type="button" data-action="delete-detail-phone" data-index="${index}">删除</button>` : `<span></span>`}
+            </div>`).join("")}
+          ${editing && draftOpen ? `
+            <div class="phone-edit-row">
+              <span>电话${phones.length + 2}</span>
+              <input id="detailExtraPhoneInput" type="text" placeholder="请输入联系电话">
+              <button class="btn small" type="button" data-action="commit-detail-phone">新增</button>
+            </div>` : ""}
+        </div>`;
+    }
+
+    function renderDrawerBasic(record, isLead) {
+      const editing = state.detailEdit?.id === record.id && state.detailEdit?.entity === (isLead ? "lead" : "opp");
+      const tagsValue = editing ? editTagChoices(state.detailEdit.tags, "detail") : tagsHtml(record.tags || []);
+      const phonesValue = detailPhoneManager(record);
+      const rows = isLead ? [
+        ["线索编号", record.id], ["联系电话", phonesValue],
+        ["商户名称", escapeHtml(record.merchant)], ["标签", tagsValue],
+        ["地址", record.address], ["状态", record.status === "pool" ? "待分配" : "已分配"],
+        ["月售", record.monthSales.toLocaleString()], ["剩余跟进时间", `${getRemainingFollowDays(record)} 天`],
+        ["派单时间", record.assignedAt || "--"], ["评分", record.rating.toFixed(1)],
+        ["线索来源", record.source], ["电销员", record.sales || "--"],
+        ["评价数", record.reviews], ["好评数", record.goodReviews],
+        ["差评数", record.badReviews], ["创建人", record.creator],
+        ["创建时间", record.createdAt], ["备注", record.note]
+      ] : [
+        ["商机编号", record.id], ["联系电话", phonesValue],
+        ["商户名称", escapeHtml(record.merchant)], ["标签", tagsValue],
+        ["联系人", record.contact], ["品类", record.category],
+        ["地址", record.address], ["状态", record.status],
+        ["客户反馈", record.demand], ["是否建客户群", record.groupBuilt],
+        ["意向度", intentBadge(record.intent)], ["月售", record.monthSales.toLocaleString()],
+        ["评分", record.rating.toFixed(1)], ["电销员", record.sales],
+        ["工单负责人", record.workOwner], ["线索来源", record.source],
+        ["省", record.province], ["市", record.city],
+        ["区县", record.district], ["是否进入计费阶段", record.serviceOpened === "已开通" ? "是" : "否"],
+        ["开始计费时间", formatDisplayTime(record.serviceOpenAt)], ["创建人", record.creator],
+        ["创建时间", record.createdAt], ["备注", record.note]
+      ];
+
+      const pairs = [];
+      for (let index = 0; index < rows.length; index += 2) {
+        pairs.push([rows[index], rows[index + 1] || ["", ""]]);
+      }
+
+      return `
+        <section class="section-block">
+          <div class="section-head">
+            <h3>${icon("clipboard")}基本信息</h3>
+          </div>
+          <table class="info-table">
+            <tbody>
+              ${pairs.map(([left, right]) => `
+                <tr>
+                  <th>${escapeHtml(left[0])}</th>
+                  <td>${left[1]}</td>
+                  <th>${escapeHtml(right[0])}</th>
+                  <td>${right[1]}</td>
+                </tr>`).join("")}
+            </tbody>
+          </table>
+        </section>`;
+    }
+
+    function renderOperations(isLead) {
+      const rows = operationRecordsByEntity[state.drawer?.id] || operationRecords[isLead ? "lead" : "opp"];
+      return `
+        <section class="section-block">
+          <div class="section-head">
+            <h3>${icon("list")}操作记录</h3>
+          </div>
+          <table class="record-table">
+            <thead><tr><th>操作时间</th><th>内容</th><th>操作人</th></tr></thead>
+            <tbody>
+              ${rows.map(row => `
+                <tr>
+                  <td>${escapeHtml(row.time)}</td>
+                  <td>${escapeHtml(row.content)}</td>
+                  <td>${escapeHtml(row.operator)}</td>
+                </tr>`).join("")}
+            </tbody>
+          </table>
+        </section>`;
+    }
+
+    function renderFollowPanel(entityId) {
+      const records = (followRecords[entityId] || [])
+        .filter(record => !state.followSearch || record.content.includes(state.followSearch) || record.author.includes(state.followSearch));
+      const canAddFollow = state.view !== "sea";
+
+      return `
+        <section class="follow-panel">
+          <div class="follow-panel-head">
+            <h3>${icon("clipboard")}跟进记录</h3>
+          </div>
+          <div class="follow-panel-tools">
+            <div class="follow-search">
+              ${icon("search")}
+              <input type="text" value="${escapeHtml(state.followSearch)}" data-action="follow-search" placeholder="请输入">
+            </div>
+            ${canAddFollow ? `<button class="follow-add" type="button" data-action="add-follow">${icon("plus")}新增</button>` : ""}
+          </div>
+          ${records.length ? records.map(record => `
+            <article class="follow-item">
+              <div class="follow-meta">
+                <span class="mini-avatar">${escapeHtml(record.author.slice(0, 1))}</span>
+                <strong>${escapeHtml(record.author)}</strong>
+                <span class="status-badge ${record.type === "转商机" ? "status-converted" : "status-pool"}">${escapeHtml(record.type || "需求沟通中")}</span>
+                <span class="follow-time">${escapeHtml(record.time.slice(5, 16))}</span>
+                <div class="more-wrap">
+                  <button class="more-button" type="button" data-action="follow-menu" data-id="${record.id}" aria-label="更多操作">${icon("more")}</button>
+                  ${state.followMenu === record.id ? `
+                    <div class="row-menu">
+                      ${record.author === CURRENT_USER ? `
+                        <button type="button" data-action="edit-follow" data-id="${record.id}">${icon("pencil")}编辑</button>
+                        <button type="button" class="danger" data-action="delete-follow" data-id="${record.id}">${icon("trash")}删除</button>
+                      ` : `<button type="button" disabled>仅本人可操作</button>`}
+                    </div>` : ""}
+                </div>
+              </div>
+              ${record.content ? `<p class="follow-content">${escapeHtml(record.content)}</p>` : ""}
+              ${record.type === "转商机" ? `
+                <div class="follow-convert-summary">
+                  联系人：${escapeHtml(record.contact || "--")}　品类：${escapeHtml(record.category || "--")}　客户反馈：${escapeHtml(record.demand || "--")}　是否建客户群：${escapeHtml(record.groupBuilt || "--")}　意向度：${escapeHtml(record.intent || "--")}
+                </div>` : ""}
+            </article>`).join("") : `
+            <div class="empty-state" style="min-height:190px">
+              <div class="empty-icon">${icon("clipboard")}</div>
+              <strong>暂无跟进记录</strong>
+              <span>点击新增记录本次沟通结果</span>
+            </div>`}
+        </section>`;
+    }
+
+    function toast(message) {
+      const root = document.getElementById("toastRoot");
+      const item = document.createElement("div");
+      item.className = "toast";
+      item.innerHTML = `${icon("check")}<span>${escapeHtml(message)}</span>`;
+      root.appendChild(item);
+      window.setTimeout(() => item.remove(), 2400);
+    }
+
+    function submitFilter(scope) {
+      renderAll();
+      const count = scope === "sea" ? getSeaRows().length : scope === "lead" ? getLeadRows().length : getOppRows().length;
+      toast(`查询完成，共 ${count} 条记录`);
+    }
+
+    function exportCellValue(row, column) {
+      if (column.key === "leadStatus") return row.status === "pool" ? "待分配" : "已分配";
+      if (column.key === "tags") return (row.tags || []).join("、");
+      if (column.key === "phone") return row.phone || "";
+      if (column.key === "monthSales") return row.monthSales ?? 0;
+      if (column.key === "rating") return row.rating ?? "";
+      if (column.key === "reviews") return row.reviews ?? 0;
+      if (column.key === "goodReviews") return row.goodReviews ?? 0;
+      if (column.key === "badReviews") return row.badReviews ?? 0;
+      return row[column.key] ?? "";
+    }
+
+    function csvCell(value) {
+      return `"${String(value).replaceAll('"', '""')}"`;
+    }
+
+    function exportScope(scope) {
+      const rows = getScopeRows(scope);
+      const columns = getVisibleColumns(scope).filter(column => column.key !== "actions");
+      const csvRows = [
+        columns.map(column => csvCell(column.label)),
+        ...rows.map(row => columns.map(column => csvCell(exportCellValue(row, column))))
+      ];
+      const content = `\uFEFF${csvRows.map(row => row.join(",")).join("\r\n")}`;
+      const link = document.createElement("a");
+      const fileNames = { sea: "线索公海", lead: "我的线索", opp: "商机列表" };
+      link.download = `${fileNames[scope]}_${new Date().toISOString().slice(0, 10)}.csv`;
+      let objectUrl = "";
+      try {
+        const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+        objectUrl = URL.createObjectURL(blob);
+        link.href = objectUrl;
+      } catch (error) {
+        link.href = `data:text/csv;charset=utf-8,${encodeURIComponent(content)}`;
+      }
+      document.body.appendChild(link);
+      toast(`已导出 ${rows.length} 条记录`);
+      link.click();
+      link.remove();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    }
+
+    function resetFilters(scope, form) {
+      state.filters[scope] = scope === "lead" ? { tag: "" } : {};
+      if (scope === "opp") {
+        form.classList.remove("expanded");
+        const toggle = form.querySelector('[data-action="toggle-more-filters"]');
+        if (toggle) {
+          toggle.setAttribute("aria-expanded", "false");
+          const label = toggle.querySelector("strong");
+          if (label) label.textContent = "展开全部";
+        }
+      }
+      if (state.regionPickerScope === scope) state.regionPickerScope = null;
+      renderRegionFilters(scope);
+      renderAll();
+      toast("已重置筛选条件");
+    }
+
+    function openAssign(idOrIds, source, selectionScope = null) {
+      if (state.role !== "manager") {
+        toast("仅电销主管可分配线索");
+        return;
+      }
+      const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+      const record = leads.find(item => item.id === ids[0]);
+      openModal("assign", {
+        id: ids.length === 1 ? ids[0] : null,
+        ids,
+        source,
+        selectionScope,
+        selected: record?.sales || "张三"
+      });
+    }
+
+    function confirmAssign(assignee) {
+      const { id, ids = [], source, selectionScope } = state.modal;
+      const targetIds = source === "batch" ? ids : [id];
+      const targets = leads.filter(item => targetIds.includes(item.id));
+      if (!targets.length || !assignee) return;
+      targets.forEach(lead => {
+        lead.status = "assigned";
+        lead.sales = assignee;
+      });
+      closeModal();
+      closeDrawer();
+      renderAll();
+      if (source === "batch") {
+        state.selection[selectionScope || "lead"].clear();
+        renderAll();
+        toast(`已批量分配 ${targets.length} 条线索给 ${assignee}`);
+        return;
+      }
+      toast(source === "lead" ? `已更换负责人为 ${assignee}` : `已将线索分配给 ${assignee}`);
+      if (source !== "lead" && state.view === "lead") navigate("lead");
+    }
+
+    function confirmReturn() {
+      const lead = leads.find(item => item.id === state.modal.id);
+      if (!lead) return;
+      lead.returnCount = Number(lead.returnCount || 0) + 1;
+      lead.status = lead.returnCount >= 2 ? "invalid" : "pool";
+      lead.sales = "";
+      closeModal();
+      closeDrawer();
+      renderAll();
+      toast(`【${lead.merchant}】已退回公海`);
+    }
+
+    function submitConvert(form) {
+      const formData = new FormData(form);
+      const sourceLead = leads.find(item => item.id === state.modal.id);
+      const now = "2026-10-12 17:12:00";
+      const opportunity = {
+        id: `OP20261012${String(opportunities.length + 30).padStart(4, "0")}`,
+        merchant: formData.get("merchant") || "",
+        category: formData.get("category") || "未分类",
+        phone: formData.get("phone") || "",
+        contact: formData.get("contact") || "",
+        address: formData.get("address") || "",
+        demand: formData.get("demand") || "",
+        groupBuilt: formData.get("groupBuilt") || "否",
+        intent: formData.get("intent") || "中",
+        monthSales: sourceLead?.monthSales || 0,
+        rating: sourceLead?.rating || 0,
+        sales: sourceLead?.sales || CURRENT_USER,
+        workOwner: "未分配",
+        source: "电销",
+        tags: sourceLead?.tags || [],
+        status: "未转化",
+        province: sourceLead?.province || "",
+        city: sourceLead?.city || "",
+        district: sourceLead?.district || "",
+        serviceOpened: "未开通",
+        serviceOpenAt: "",
+        creator: CURRENT_USER,
+        createdAt: now,
+        note: formData.get("note") || "",
+        extraPhones: [...(state.modal.extraPhones || [])],
+        signed: sourceLead?.signed || "未签约"
+      };
+      if (sourceLead) sourceLead.converted = true;
+      opportunities.unshift(opportunity);
+      closeModal();
+      closeDrawer();
+      navigate("opp");
+      toast("转商机成功，已自动生成代运营线索工单");
+    }
+
+    function submitNewOpportunity(form) {
+      const formData = new FormData(form);
+      const now = "2026-10-14 17:20:00";
+      opportunities.unshift({
+        id: `OP20261014${String(opportunities.length + 40).padStart(4, "0")}`,
+        merchant: String(formData.get("merchant") || "").trim(),
+        category: String(formData.get("category") || "").trim(),
+        phone: String(formData.get("phone") || "").trim(),
+        extraPhones: [],
+        contact: String(formData.get("contact") || "").trim(),
+        address: String(formData.get("address") || "").trim(),
+        demand: String(formData.get("demand") || "").trim(),
+        groupBuilt: String(formData.get("groupBuilt") || "否"),
+        intent: String(formData.get("intent") || "中"),
+        monthSales: 0,
+        rating: 0,
+        sales: CURRENT_USER,
+        workOwner: "未分配",
+        source: "电销",
+        tags: [],
+        status: "未转化",
+        province: "",
+        city: "",
+        district: "",
+        serviceOpened: "未开通",
+        serviceOpenAt: "",
+        creator: CURRENT_USER,
+        createdAt: now,
+        note: "",
+        signed: "未签约"
+      });
+      closeModal();
+      renderAll();
+      toast("商机已新增");
+    }
+
+    function saveFollow() {
+      const textarea = document.getElementById("followContent");
+      const content = textarea.value.trim();
+      const followType = document.getElementById("followType")?.value || state.modal.followType || "需求沟通中";
+      if (followType !== "转商机" && !content) {
+        textarea.focus();
+        toast("请输入跟进内容");
+        return;
+      }
+      if (!state.drawer) return;
+      const entityId = state.drawer.id;
+      if (!followRecords[entityId]) followRecords[entityId] = [];
+      const convertFields = {
+        contact: document.getElementById("followContact")?.value.trim() || "",
+        category: document.getElementById("followCategory")?.value.trim() || "",
+        demand: document.getElementById("followDemand")?.value.trim() || "",
+        groupBuilt: document.getElementById("followGroupBuilt")?.value || "否",
+        intent: document.getElementById("followIntent")?.value || "中"
+      };
+      if (followType === "转商机" && Object.entries(convertFields).some(([key, value]) => ["contact", "demand"].includes(key) && !value)) {
+        toast("请补充联系人和客户反馈");
+        return;
+      }
+      const shouldReturnSea = followType === "无合作意向"
+        && state.drawer.type === "lead"
+        && document.getElementById("followReturnSea")?.value === "是";
+
+      if (state.modal.mode === "edit") {
+        const record = followRecords[entityId].find(item => item.id === state.modal.record.id);
+        if (record) {
+          record.content = content;
+          record.type = followType;
+          Object.assign(record, convertFields);
+          record.time = "2026-10-12 17:15:00";
+        }
+        toast("跟进记录已更新");
+      } else {
+        followRecords[entityId].unshift({
+          id: `F${Date.now()}`,
+          author: CURRENT_USER,
+          time: "2026-10-12 17:15:00",
+          content,
+          type: followType,
+          ...convertFields
+        });
+        toast("跟进记录已新增");
+      }
+      closeModal();
+      if (shouldReturnSea) {
+        const lead = leads.find(item => item.id === entityId);
+        if (lead) {
+          lead.returnCount = Number(lead.returnCount || 0) + 1;
+          lead.status = lead.returnCount >= 2 ? "invalid" : "pool";
+          lead.sales = "";
+        }
+        closeDrawer();
+        renderAll();
+        toast("已记录无合作意向，并将线索退回公海");
+      } else {
+        renderDrawer();
+      }
+    }
+
+    function deleteFollow() {
+      if (!state.drawer) return;
+      const entityId = state.drawer.id;
+      const recordId = state.modal.record.id;
+      const record = (followRecords[entityId] || []).find(item => item.id === recordId);
+      if (!record || record.author !== CURRENT_USER) {
+        closeModal();
+        toast("仅记录人可删除跟进记录");
+        return;
+      }
+      followRecords[entityId] = followRecords[entityId].filter(item => item.id !== recordId);
+      closeModal();
+      state.followMenu = null;
+      renderDrawer();
+      toast("跟进记录已删除");
+    }
+
+    function updateSelection(scope, id, checked) {
+      const set = state.selection[scope];
+      if (checked) set.add(id);
+      else set.delete(id);
+      renderAll();
+    }
+
+    function selectAll(scope, checked) {
+      const rows = scope === "sea" ? getSeaRows() : scope === "lead" ? getLeadRows() : getOppRows();
+      state.selection[scope] = new Set(checked ? rows.map(row => row.id) : []);
+      renderAll();
+    }
+
+    document.addEventListener("click", async event => {
+      const actionTarget = event.target.closest("[data-action]");
+      const viewTarget = event.target.closest("[data-view]");
+      const roleTarget = event.target.closest("[data-role]");
+
+      if (viewTarget) {
+        navigate(viewTarget.dataset.view);
+        document.getElementById("sidebar").classList.remove("open");
+        document.getElementById("mobileScrim").classList.remove("open");
+        return;
+      }
+
+      if (roleTarget) {
+        state.role = roleTarget.dataset.role;
+        document.querySelectorAll("[data-role]").forEach(button => button.classList.toggle("active", button.dataset.role === state.role));
+        document.getElementById("sidebarRole").textContent = state.role === "manager" ? "电销主管" : "电销员";
+        state.selection.lead.clear();
+        renderAll();
+        toast(state.role === "manager" ? "已切换至电销主管视角" : "已切换至电销员视角");
+        return;
+      }
+
+      if (!actionTarget) {
+        if (!event.target.closest(".tag-picker")) {
+          document.querySelectorAll(".tag-picker.open").forEach(picker => {
+            picker.classList.remove("open");
+            picker.querySelector(".tag-picker-trigger")?.setAttribute("aria-expanded", "false");
+          });
+        }
+        if (state.regionPickerScope && !event.target.closest(".region-picker")) {
+          state.regionPickerScope = null;
+          ["sea", "lead", "opp"].forEach(renderRegionFilters);
+        }
+        if (!event.target.closest(".column-panel") && state.columnPanelScope) {
+          state.columnPanelScope = null;
+          renderColumnPanel();
+        }
+        if (state.followMenu && !event.target.closest(".more-wrap")) {
+          state.followMenu = null;
+          renderDrawer();
+        }
+        return;
+      }
+
+      const action = actionTarget.dataset.action;
+      if (action === "toggle-tag-picker") {
+        const picker = actionTarget.closest(".tag-picker");
+        const open = !picker.classList.contains("open");
+        picker.classList.toggle("open", open);
+        actionTarget.setAttribute("aria-expanded", String(open));
+        if (open) picker.querySelector('[data-action="tag-search"]')?.focus();
+        return;
+      }
+      if (action === "toggle-region-picker") {
+        const scope = actionTarget.dataset.scope;
+        state.regionPickerScope = state.regionPickerScope === scope ? null : scope;
+        ["sea", "lead", "opp"].forEach(renderRegionFilters);
+        return;
+      }
+      if (action === "select-region") {
+        selectRegion(actionTarget.dataset.scope, actionTarget.dataset.level, actionTarget.dataset.value);
+        return;
+      }
+      if (action === "clear-region") {
+        const scope = actionTarget.dataset.scope;
+        state.filters[scope].province = "";
+        state.filters[scope].city = "";
+        state.filters[scope].district = "";
+        state.regionPickerScope = scope;
+        renderRegionFilters(scope);
+        return;
+      }
+      if (action === "close-region-picker") {
+        state.regionPickerScope = null;
+        ["sea", "lead", "opp"].forEach(renderRegionFilters);
+        return;
+      }
+      if (action === "switch-list-tab") {
+        const scope = actionTarget.dataset.scope;
+        state.listTabs[scope] = actionTarget.dataset.tab;
+        if (scope === "sea" && actionTarget.dataset.tab !== "assigned") {
+          state.filters.sea.sales = "";
+          const salesFilter = document.getElementById("seaSales");
+          if (salesFilter) salesFilter.value = "";
+        }
+        state.selection[scope].clear();
+        renderAll();
+        return;
+      }
+      if (action === "toggle-nav") {
+        document.getElementById("lineNav").classList.toggle("open");
+        document.getElementById("lineChildren").classList.toggle("open");
+      }
+      if (action === "open-sidebar") {
+        document.getElementById("sidebar").classList.add("open");
+        document.getElementById("mobileScrim").classList.add("open");
+      }
+      if (action === "close-sidebar") {
+        document.getElementById("sidebar").classList.remove("open");
+        document.getElementById("mobileScrim").classList.remove("open");
+      }
+      if (action === "copy-phone") {
+        try {
+          await navigator.clipboard.writeText(actionTarget.dataset.phone);
+        } catch (error) {
+          const helper = document.createElement("textarea");
+          helper.value = actionTarget.dataset.phone;
+          document.body.appendChild(helper);
+          helper.select();
+          document.execCommand("copy");
+          helper.remove();
+        }
+        toast("复制成功");
+      }
+      if (action === "open-lead-drawer") openDrawer("lead", actionTarget.dataset.id);
+      if (action === "open-opp-drawer") openDrawer("opp", actionTarget.dataset.id);
+      if (action === "start-detail-edit") {
+        const record = state.drawer?.type === "opp"
+          ? opportunities.find(item => item.id === state.drawer.id)
+          : leads.find(item => item.id === state.drawer?.id);
+        if (record) startDetailEdit(record, state.drawer.type === "lead");
+      }
+      if (action === "cancel-detail-edit") cancelDetailEdit();
+      if (action === "save-detail-edit") saveDetailEdit();
+      if (action === "open-detail-phone") {
+        if (!state.drawer) return;
+        state.detailPhoneDraft = { type: state.drawer.type, id: state.drawer.id };
+        renderDrawer();
+        document.getElementById("detailExtraPhoneInput")?.focus();
+      }
+      if (action === "commit-detail-phone") {
+        const input = document.getElementById("detailExtraPhoneInput");
+        const phone = input?.value.trim() || "";
+        if (!phone) {
+          input?.focus();
+          toast("请输入联系电话");
+        } else {
+          const record = state.drawer?.type === "opp"
+            ? opportunities.find(item => item.id === state.drawer.id)
+            : leads.find(item => item.id === state.drawer?.id);
+          if (record) {
+            record.extraPhones = [...(record.extraPhones || []), phone];
+            state.detailPhoneDraft = null;
+            renderAll();
+            renderDrawer();
+            toast("联系电话已新增");
+          }
+        }
+      }
+      if (action === "delete-detail-phone") {
+        const index = Number(actionTarget.dataset.index);
+        const record = state.drawer?.type === "opp"
+          ? opportunities.find(item => item.id === state.drawer.id)
+          : leads.find(item => item.id === state.drawer?.id);
+        if (record?.extraPhones?.[index] !== undefined) {
+          record.extraPhones.splice(index, 1);
+          state.detailPhoneDraft = null;
+          renderAll();
+          renderDrawer();
+          toast("联系电话已删除");
+        }
+      }
+      if (action === "edit-record") openEdit(actionTarget.dataset.entity, actionTarget.dataset.id);
+      if (action === "edit-tag-toggle") {
+        const tag = actionTarget.dataset.tag;
+        const tags = state.modal?.tags || [];
+        state.modal.tags = tags.includes(tag) ? tags.filter(item => item !== tag) : [...tags, tag];
+        actionTarget.classList.toggle("active", state.modal.tags.includes(tag));
+      }
+      if (action === "add-extra-phone") {
+        const input = document.getElementById("extraPhoneInput");
+        const phone = input?.value.trim() || "";
+        if (!phone) {
+          toast("请输入联系电话");
+        } else {
+          state.modal.extraPhones = [...(state.modal.extraPhones || []), phone];
+          renderModal();
+        }
+      }
+      if (action === "add-edit-phone") {
+        if (actionTarget.dataset.mode === "open") {
+          state.modal.phoneDraftOpen = true;
+          renderModal();
+          document.getElementById("extraPhoneInput")?.focus();
+        } else {
+          const input = document.getElementById("extraPhoneInput");
+          const phone = input?.value.trim() || "";
+          if (!phone) {
+            input?.focus();
+            toast("请输入联系电话");
+          } else {
+            state.modal.extraPhones = [...(state.modal.extraPhones || []), phone];
+            state.modal.phoneDraftOpen = true;
+            renderModal();
+            document.getElementById("extraPhoneInput")?.focus();
+          }
+        }
+      }
+      if (action === "add-convert-phone") {
+        if (actionTarget.dataset.mode === "open") {
+          state.modal.phoneDraftOpen = true;
+          renderModal();
+          document.getElementById("convertExtraPhoneInput")?.focus();
+        } else {
+          const input = document.getElementById("convertExtraPhoneInput");
+          const phone = input?.value.trim() || "";
+          if (!phone) {
+            input?.focus();
+            toast("请输入联系电话");
+          } else {
+            state.modal.extraPhones = [...(state.modal.extraPhones || []), phone];
+            state.modal.phoneDraftOpen = true;
+            renderModal();
+            document.getElementById("convertExtraPhoneInput")?.focus();
+          }
+        }
+      }
+      if (action === "close-drawer") closeDrawer();
+      if (action === "batch-assign") {
+        const scope = actionTarget.dataset.scope || "lead";
+        const ids = [...state.selection[scope]];
+        if (!ids.length) {
+          toast("请先选择需要批量分配的线索");
+        } else {
+          openAssign(ids, "batch", scope);
+        }
+      }
+      if (action === "assign") openAssign(actionTarget.dataset.id, actionTarget.dataset.source || "sea");
+      if (action === "return-sea") openModal("return", { id: actionTarget.dataset.id });
+      if (action === "convert") openModal("convert", { id: actionTarget.dataset.id });
+      if (action === "close-modal") closeModal();
+      if (action === "confirm-assign") {
+        const selected = document.querySelector('input[name="assignee"]:checked')?.value || "";
+        confirmAssign(selected);
+      }
+      if (action === "confirm-return") confirmReturn();
+      if (action === "add-follow") openModal("follow", { mode: "add" });
+      if (action === "follow-menu") {
+        state.followMenu = state.followMenu === actionTarget.dataset.id ? null : actionTarget.dataset.id;
+        renderDrawer();
+      }
+      if (action === "edit-follow") {
+        const record = (followRecords[state.drawer.id] || []).find(item => item.id === actionTarget.dataset.id);
+        if (record?.author === CURRENT_USER) openModal("follow", { mode: "edit", record });
+        else toast("仅记录人可编辑跟进记录");
+      }
+      if (action === "delete-follow") {
+        const record = (followRecords[state.drawer.id] || []).find(item => item.id === actionTarget.dataset.id);
+        if (record?.author === CURRENT_USER) openModal("delete-follow", { record });
+        else toast("仅记录人可删除跟进记录");
+      }
+      if (action === "save-follow") saveFollow();
+      if (action === "confirm-delete-follow") deleteFollow();
+      if (action === "toggle-columns") {
+        const scope = actionTarget.dataset.scope;
+        state.columnPanelScope = state.columnPanelScope === scope ? null : scope;
+        renderColumnPanel();
+      }
+      if (action === "toggle-more-filters") {
+        const scope = actionTarget.dataset.scope;
+        const form = document.getElementById(`${scope}FilterForm`);
+        const expanded = form.classList.toggle("expanded");
+        actionTarget.setAttribute("aria-expanded", String(expanded));
+        const label = actionTarget.querySelector("strong");
+        if (label) label.textContent = expanded ? "收起" : "展开全部";
+      }
+      if (action === "export") exportScope(actionTarget.dataset.scope);
+      if (action === "new-opportunity") openModal("new-opp");
+      if (action === "import-opportunities") openModal("import-opp");
+      if (action === "confirm-import-opp") {
+        const file = document.getElementById("importOppFile")?.files?.[0];
+        if (!file) {
+          toast("请先选择导入文件");
+        } else {
+          closeModal();
+          toast(`已导入文件：${file.name}`);
+        }
+      }
+      if (action === "column-option") {
+        const { value } = actionTarget;
+        const scope = actionTarget.dataset.scope;
+        if (actionTarget.checked) state.visibleColumns[scope].add(value);
+        else state.visibleColumns[scope].delete(value);
+        renderConfigurableTable(scope);
+        renderColumnPanel();
+      }
+      if (action === "select-row") {
+        event.stopPropagation();
+        updateSelection(actionTarget.dataset.scope, actionTarget.dataset.id, actionTarget.checked);
+      }
+    });
+
+    document.addEventListener("change", event => {
+      const scope = event.target.dataset.filterScope;
+      const key = event.target.dataset.filterKey;
+      if (scope && key) {
+        state.filters[scope][key] = event.target.value;
+      }
+
+      if (event.target.matches('input[name="assignee"]')) {
+        document.querySelectorAll(".assign-person").forEach(person => {
+          person.classList.toggle("selected", person.contains(event.target));
+        });
+      }
+
+      if (event.target.dataset.action === "follow-type-select") {
+        state.modal.followType = event.target.value;
+        const fields = document.getElementById("followConvertFields");
+        const required = event.target.value === "转商机";
+        if (fields) fields.style.display = required ? "contents" : "none";
+        const contentField = document.getElementById("followContentField");
+        const content = document.getElementById("followContent");
+        if (contentField) contentField.style.display = required ? "none" : "";
+        if (content) content.required = !required;
+        const returnField = document.getElementById("followReturnSeaField");
+        if (returnField) returnField.style.display = event.target.value === "无合作意向" ? "" : "none";
+        ["followContact", "followDemand", "followGroupBuilt", "followIntent"].forEach(id => {
+          const field = document.getElementById(id);
+          if (field) field.required = required;
+        });
+      }
+
+      if (event.target.dataset.action === "toggle-edit-tag") {
+        const tag = event.target.value;
+        const context = event.target.dataset.editContext || "modal";
+        const store = context === "detail" ? state.detailEdit : state.modal;
+        const tags = store?.tags || [];
+        store.tags = event.target.checked
+          ? [...new Set([...tags, tag])]
+          : tags.filter(item => item !== tag);
+        const pickerId = context === "detail" ? "detailTagPicker" : "editTagPicker";
+        const value = document.querySelector(`#${pickerId} .tag-picker-value`);
+        if (value) value.textContent = store.tags.length ? store.tags.join("、") : "请选择标签";
+      }
+
+      if (event.target.dataset.action === "select-all") {
+        selectAll(event.target.dataset.scope, event.target.checked);
+      }
+    });
+
+    document.addEventListener("input", event => {
+      const scope = event.target.dataset.filterScope;
+      const key = event.target.dataset.filterKey;
+      if (scope && key) state.filters[scope][key] = event.target.value;
+
+      if (event.target.matches("#followContent")) {
+        const count = event.target.value.length;
+        const counter = document.getElementById("followCounter");
+        if (counter) {
+          counter.textContent = `${count}/2000`;
+          counter.classList.toggle("limit", count >= 2000);
+        }
+      }
+
+      if (event.target.dataset.action === "follow-search") {
+        state.followSearch = event.target.value;
+        renderDrawer();
+        const input = document.querySelector('[data-action="follow-search"]');
+        if (input) {
+          input.focus();
+          input.setSelectionRange(input.value.length, input.value.length);
+        }
+      }
+
+      if (event.target.dataset.action === "assign-search") {
+        const keyword = event.target.value.trim().toLowerCase();
+        document.querySelectorAll(".assign-person").forEach(person => {
+          person.style.display = person.dataset.assignSearchText.toLowerCase().includes(keyword) ? "" : "none";
+        });
+        document.querySelectorAll("[data-assign-team]").forEach(team => {
+          team.style.display = [...team.querySelectorAll(".assign-person")].some(person => person.style.display !== "none") ? "" : "none";
+        });
+        document.querySelectorAll("[data-assign-region]").forEach(region => {
+          region.style.display = [...region.querySelectorAll(".assign-person")].some(person => person.style.display !== "none") ? "" : "none";
+        });
+        const empty = document.getElementById("assignEmpty");
+        if (empty) empty.style.display = keyword && [...document.querySelectorAll(".assign-person")].every(person => person.style.display === "none") ? "" : "none";
+      }
+
+      if (event.target.dataset.action === "tag-search") {
+        const keyword = event.target.value.trim().toLowerCase();
+        document.querySelectorAll(".tag-option").forEach(option => {
+          option.style.display = option.dataset.tagText.toLowerCase().includes(keyword) ? "" : "none";
+        });
+      }
+    });
+
+    document.addEventListener("submit", event => {
+      event.preventDefault();
+      const scope = event.target.dataset.filterForm;
+      if (scope) {
+        submitFilter(scope);
+        return;
+      }
+      if (event.target.id === "convertForm") submitConvert(event.target);
+      if (event.target.id === "editForm") submitEdit(event.target);
+      if (event.target.id === "newOppForm") submitNewOpportunity(event.target);
+    });
+
+    document.addEventListener("reset", event => {
+      const scope = event.target.dataset.filterForm;
+      if (scope) {
+        window.setTimeout(() => resetFilters(scope, event.target), 0);
+      }
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        if (state.modal) closeModal();
+        else if (state.drawer) closeDrawer();
+        else if (state.columnPanelScope) {
+          state.columnPanelScope = null;
+          renderColumnPanel();
+        }
+      }
+    });
+
+    initRegionFilters();
+    renderAll();
+  </script>
+</body>
+</html>
