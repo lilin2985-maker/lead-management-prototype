@@ -5281,11 +5281,6 @@
                 </div>
                 ${state.drawer?.type === "lead" ? `
                   <div class="field full" id="followReturnSeaField" style="display:${showReturnSea ? "" : "none"}">
-                    <label for="followReturnSea">是否退回公海</label>
-                    <select id="followReturnSea">
-                      <option value="否">否</option>
-                      <option value="是">是</option>
-                    </select>
                     <div class="field-note">首次联系商家，商家表示无合作意向时，线索退回线索公海待分配界面；若两次联系商家，对方均无合作意向，该线索将退回至线索公海的无效线索列表。</div>
                   </div>` : ""}
                 <div class="field full follow-convert-fields" id="followConvertFields" style="display:${showConvertFields ? "contents" : "none"}">
@@ -5930,9 +5925,7 @@
         toast("请补充联系人和客户反馈");
         return;
       }
-      const shouldReturnSea = followType === "无合作意向"
-        && state.drawer.type === "lead"
-        && document.getElementById("followReturnSea")?.value === "是";
+      const shouldReturnSea = followType === "无合作意向" && state.drawer.type === "lead";
 
       if (state.modal.mode === "edit") {
         const record = followRecords[entityId].find(item => item.id === state.modal.record.id);
