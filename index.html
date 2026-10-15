@@ -2925,7 +2925,15 @@
                   <input type="date" data-filter-scope="sea" data-filter-key="endDate" aria-label="创建结束时间">
                 </div>
               </div>
-              <div class="field wide">
+              <div class="field wide" id="seaFollowTimeField" style="display:none">
+                <label>最近跟进时间</label>
+                <div class="date-range">
+                  <input type="date" data-filter-scope="sea" data-filter-key="followStartDate" aria-label="最近跟进开始时间">
+                  <span>至</span>
+                  <input type="date" data-filter-scope="sea" data-filter-key="followEndDate" aria-label="最近跟进结束时间">
+                </div>
+              </div>
+              <div class="field wide" id="seaAssignTimeFilterField">
                 <label>派单时间</label>
                 <div class="date-range">
                   <input type="date" data-filter-scope="sea" data-filter-key="assignStartDate" aria-label="派单开始时间">
@@ -2949,6 +2957,10 @@
                 已选 <strong id="seaSelectedCount">0</strong> 条
               </div>
               <div class="table-actions">
+                <button class="btn small" type="button" data-action="new-lead" id="seaNewLeadButton">
+                  <svg><use href="#i-plus"></use></svg>
+                  新增
+                </button>
                 <button class="btn small" type="button" data-action="batch-assign" data-scope="sea">
                   <svg><use href="#i-user-check"></use></svg>
                   批量分配
@@ -3075,6 +3087,14 @@
                   <input type="date" data-filter-scope="lead" data-filter-key="endDate" aria-label="创建结束时间">
                 </div>
               </div>
+              <div class="field wide">
+                <label>最近跟进时间</label>
+                <div class="date-range">
+                  <input type="date" data-filter-scope="lead" data-filter-key="followStartDate" aria-label="最近跟进开始时间">
+                  <span>至</span>
+                  <input type="date" data-filter-scope="lead" data-filter-key="followEndDate" aria-label="最近跟进结束时间">
+                </div>
+              </div>
               <div class="filter-actions">
                 <button class="btn" type="reset" data-action="reset-filters" data-scope="lead">重置</button>
                 <button class="btn primary" type="submit">
@@ -3091,6 +3111,10 @@
                 已选 <strong id="leadSelectedCount">0</strong> 条
               </div>
               <div class="table-actions">
+                <button class="btn small" type="button" data-action="new-lead" data-source="lead">
+                  <svg><use href="#i-plus"></use></svg>
+                  新增
+                </button>
                 <button class="icon-button" type="button" data-action="toggle-columns" data-scope="lead" data-tooltip="表头设置" aria-label="表头设置">
                   <svg><use href="#i-settings"></use></svg>
                 </button>
@@ -3255,6 +3279,14 @@
                   <input type="date" data-filter-scope="opp" data-filter-key="serviceStartDate" aria-label="开始计费开始时间">
                   <span>至</span>
                   <input type="date" data-filter-scope="opp" data-filter-key="serviceEndDate" aria-label="开始计费结束时间">
+                </div>
+              </div>
+              <div class="field wide opp-filter-advanced">
+                <label>最近跟进时间</label>
+                <div class="date-range">
+                  <input type="date" data-filter-scope="opp" data-filter-key="followStartDate" aria-label="最近跟进开始时间">
+                  <span>至</span>
+                  <input type="date" data-filter-scope="opp" data-filter-key="followEndDate" aria-label="最近跟进结束时间">
                 </div>
               </div>
               <div class="filter-actions">
@@ -3874,7 +3906,9 @@
       { key: "reviews", label: "评价数", width: 76 },
       { key: "goodReviews", label: "好评数", width: 76 },
       { key: "badReviews", label: "差评数", width: 76 },
+      { key: "creator", label: "创建人", width: 86 },
       { key: "assignedAt", label: "派单时间", width: 152 },
+      { key: "lastFollowAt", label: "最近跟进时间", width: 152 },
       { key: "createdAt", label: "创建时间", width: 152 },
       { key: "actions", label: "操作", width: 170, locked: true }
     ];
@@ -3894,7 +3928,9 @@
       { key: "reviews", label: "评价数", width: 76 },
       { key: "goodReviews", label: "好评数", width: 76 },
       { key: "badReviews", label: "差评数", width: 76 },
+      { key: "creator", label: "创建人", width: 86 },
       { key: "assignedAt", label: "派单时间", width: 152 },
+      { key: "lastFollowAt", label: "最近跟进时间", width: 152 },
       { key: "createdAt", label: "创建时间", width: 152 },
       { key: "note", label: "备注", width: 190 },
       { key: "actions", label: "操作", width: 220, locked: true }
@@ -3920,6 +3956,7 @@
       { key: "serviceOpenAt", label: "开始计费时间", width: 152 },
       { key: "creator", label: "创建人", width: 78 },
       { key: "assignedAt", label: "派单时间", width: 152 },
+      { key: "lastFollowAt", label: "最近跟进时间", width: 152 },
       { key: "createdAt", label: "创建时间", width: 152 },
       { key: "note", label: "备注", width: 190 },
       { key: "actions", label: "操作", width: 118, locked: true }
@@ -4084,7 +4121,8 @@
           : "pool";
       const rows = leads
         .filter(row => row.status === expectedStatus && matchesBaseFilters(row, state.filters.sea))
-        .filter(row => matchDate(row.assignedAt, state.filters.sea.assignStartDate, state.filters.sea.assignEndDate));
+        .filter(row => matchDate(row.assignedAt, state.filters.sea.assignStartDate, state.filters.sea.assignEndDate))
+        .filter(row => matchDate(getLatestFollowTime(row.id), state.filters.sea.followStartDate, state.filters.sea.followEndDate));
       return sortRows("sea", rows);
     }
 
@@ -4100,7 +4138,8 @@
           const remainingDays = getRemainingFollowDays(row);
           return remainingDays === Number(filters.remainingDays);
         })
-        .filter(row => matchDate(row.assignedAt, filters.assignStartDate, filters.assignEndDate));
+        .filter(row => matchDate(row.assignedAt, filters.assignStartDate, filters.assignEndDate))
+        .filter(row => matchDate(getLatestFollowTime(row.id), filters.followStartDate, filters.followEndDate));
       return sortRows("lead", rows);
     }
 
@@ -4110,6 +4149,14 @@
       const assigned = Date.parse(`${row.assignedAt.replace(" ", "T")}+08:00`);
       const elapsedDays = Math.floor((today - assigned) / 86400000);
       return Math.max(0, 7 - elapsedDays);
+    }
+
+    function getLatestFollowTime(entityId) {
+      const records = followRecords[entityId] || [];
+      return records.reduce((latest, record) => {
+        const time = record.time || "";
+        return time > latest ? time : latest;
+      }, "");
     }
 
     function getLeadStage(row) {
@@ -4178,7 +4225,8 @@
         .filter(row => !filters.status || row.status === filters.status)
         .filter(row => !filters.tag || (row.tags || []).includes(filters.tag))
         .filter(row => matchDate(row.createdAt, filters.startDate, filters.endDate))
-        .filter(row => matchDate(row.serviceOpenAt, filters.serviceStartDate, filters.serviceEndDate));
+        .filter(row => matchDate(row.serviceOpenAt, filters.serviceStartDate, filters.serviceEndDate))
+        .filter(row => matchDate(getLatestFollowTime(row.id), filters.followStartDate, filters.followEndDate));
       return sortRows("opp", rows);
     }
 
@@ -4196,6 +4244,9 @@
 
     function isColumnAvailable(scope, column) {
       if (scope === "sea" && state.listTabs.sea !== "assigned" && column.key === "sales") {
+        return false;
+      }
+      if (scope === "sea" && state.listTabs.sea === "pool" && column.key === "assignedAt") {
         return false;
       }
       return true;
@@ -4287,11 +4338,17 @@
         case "serviceOpenAt":
           return escapeHtml(formatDisplayTime(row.serviceOpenAt));
         case "creator":
+          if (scope === "sea" || scope === "lead") {
+            const systemCreators = ["系统采集", "RPA采集", "系统释放", "工单回流"];
+            return escapeHtml(systemCreators.includes(row.creator) ? "系统" : row.creator || "系统");
+          }
           return escapeHtml(row.creator);
         case "createdAt":
           return escapeHtml(row.createdAt);
         case "assignedAt":
           return escapeHtml(row.assignedAt || "--");
+        case "lastFollowAt":
+          return escapeHtml(getLatestFollowTime(row.id) || "--");
         case "note":
           return `<span title="${escapeHtml(row.note)}">${escapeHtml(row.note)}</span>`;
         case "reviews":
@@ -4507,6 +4564,19 @@
 
       const seaSalesField = document.getElementById("seaSalesField");
       if (seaSalesField) seaSalesField.style.display = state.listTabs.sea === "assigned" ? "" : "none";
+
+      const seaFollowTimeField = document.getElementById("seaFollowTimeField");
+      if (seaFollowTimeField) {
+        seaFollowTimeField.style.display = state.listTabs.sea === "pool" ? "none" : "";
+      }
+
+      const seaAssignTimeFilterField = document.getElementById("seaAssignTimeFilterField");
+      if (seaAssignTimeFilterField) {
+        seaAssignTimeFilterField.style.display = state.listTabs.sea === "pool" ? "none" : "";
+      }
+
+      const seaNewLeadButton = document.getElementById("seaNewLeadButton");
+      if (seaNewLeadButton) seaNewLeadButton.style.display = state.listTabs.sea === "pool" ? "" : "none";
     }
 
     function navigate(view) {
@@ -4987,6 +5057,86 @@
           footer: `
             <button class="btn" type="button" data-action="close-modal">取消</button>
             <button class="btn primary" type="submit" form="newOppForm">保存</button>`
+        });
+      }
+
+      if (type === "new-lead") {
+        if (!Array.isArray(state.modal.tags)) state.modal.tags = [];
+        if (!Array.isArray(state.modal.extraPhones)) state.modal.extraPhones = [];
+        if (typeof state.modal.phoneDraftOpen !== "boolean") state.modal.phoneDraftOpen = false;
+        const extraPhones = state.modal.extraPhones;
+        root.innerHTML = modalShell({
+          title: "新增线索",
+          size: "wide",
+          body: `
+            <form id="newLeadForm" class="form-grid">
+              <div class="field">
+                <label class="required" for="newLeadMerchant">商户名称</label>
+                <input id="newLeadMerchant" name="merchant" type="text" required placeholder="请输入">
+              </div>
+              <div class="field">
+                <label>标签</label>
+                ${editTagChoices(state.modal.tags)}
+              </div>
+              <div class="field full">
+                <label class="required">联系电话</label>
+                <div class="phone-edit-list">
+                  <div class="phone-edit-row">
+                    <span>电话1</span>
+                    <input id="newLeadPrimaryPhone" name="phone" type="text" required placeholder="请输入">
+                    <button class="btn small" type="button" data-action="add-new-lead-phone" data-mode="open">新增</button>
+                  </div>
+                  ${extraPhones.map((phone, index) => `
+                    <div class="phone-edit-row">
+                      <span>电话${index + 2}</span>
+                      <input type="text" value="${escapeHtml(phone)}" readonly placeholder="请输入">
+                      <span></span>
+                    </div>`).join("")}
+                  ${state.modal.phoneDraftOpen ? `
+                    <div class="phone-edit-row">
+                      <span>电话${extraPhones.length + 2}</span>
+                      <input id="newLeadPhoneInput" type="text" placeholder="请输入">
+                      <button class="btn small" type="button" data-action="add-new-lead-phone" data-mode="commit">新增</button>
+                    </div>` : ""}
+                </div>
+              </div>
+              <div class="field">
+                <label class="required" for="newLeadSource">线索来源</label>
+                <select id="newLeadSource" name="source" required>
+                  <option value="">请选择</option>
+                  <option value="美团外卖">美团外卖</option>
+                  <option value="淘宝闪购">淘宝闪购</option>
+                  <option value="京东秒送">京东秒送</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label class="required" for="newLeadAddress">地址</label>
+                <input id="newLeadAddress" name="address" type="text" required placeholder="请输入">
+              </div>
+              <div class="field">
+                <label for="newLeadMonthSales">月售</label>
+                <input id="newLeadMonthSales" name="monthSales" type="number" min="0" placeholder="请输入">
+              </div>
+              <div class="field">
+                <label for="newLeadRating">评分</label>
+                <input id="newLeadRating" name="rating" type="number" min="0" max="5" step="0.1" placeholder="请输入">
+              </div>
+              <div class="field">
+                <label for="newLeadReviews">评价数</label>
+                <input id="newLeadReviews" name="reviews" type="number" min="0" placeholder="请输入">
+              </div>
+              <div class="field">
+                <label for="newLeadGoodReviews">好评数</label>
+                <input id="newLeadGoodReviews" name="goodReviews" type="number" min="0" placeholder="请输入">
+              </div>
+              <div class="field">
+                <label for="newLeadBadReviews">差评数</label>
+                <input id="newLeadBadReviews" name="badReviews" type="number" min="0" placeholder="请输入">
+              </div>
+            </form>`,
+          footer: `
+            <button class="btn" type="button" data-action="close-modal">取消</button>
+            <button class="btn primary" type="submit" form="newLeadForm">保存</button>`
         });
       }
 
@@ -5567,6 +5717,43 @@
       toast("商机已新增");
     }
 
+    function submitNewLead(form) {
+      const formData = new FormData(form);
+      const now = "2026-10-15 15:30:00";
+      const fromMyLeads = state.modal.source === "lead";
+      const newLead = {
+        id: `LD20261015${String(leads.length + 1).padStart(4, "0")}`,
+        merchant: String(formData.get("merchant") || "").trim(),
+        contact: "",
+        phone: String(formData.get("phone") || "").trim(),
+        address: String(formData.get("address") || "").trim(),
+        province: "",
+        city: "",
+        district: "",
+        extraPhones: [...(state.modal.extraPhones || [])],
+        monthSales: Number(formData.get("monthSales")) || 0,
+        rating: Number(formData.get("rating")) || 0,
+        source: String(formData.get("source") || ""),
+        tags: [...(state.modal.tags || [])],
+        status: fromMyLeads ? "assigned" : "pool",
+        sales: fromMyLeads ? CURRENT_USER : "",
+        leadSection: fromMyLeads ? "pending" : "following",
+        assignedAt: fromMyLeads ? now : "",
+        reviews: Number(formData.get("reviews")) || 0,
+        goodReviews: Number(formData.get("goodReviews")) || 0,
+        badReviews: Number(formData.get("badReviews")) || 0,
+        creator: CURRENT_USER,
+        createdAt: now,
+        note: "",
+        signed: "未签约",
+        serviceOpenAt: ""
+      };
+      leads.unshift(newLead);
+      closeModal();
+      renderAll();
+      toast(fromMyLeads ? "线索已新增到我的线索" : "线索已新增到公海");
+    }
+
     function saveFollow() {
       const textarea = document.getElementById("followContent");
       const content = textarea.value.trim();
@@ -5877,6 +6064,25 @@
           }
         }
       }
+      if (action === "add-new-lead-phone") {
+        if (actionTarget.dataset.mode === "open") {
+          state.modal.phoneDraftOpen = true;
+          renderModal();
+          document.getElementById("newLeadPhoneInput")?.focus();
+        } else {
+          const input = document.getElementById("newLeadPhoneInput");
+          const phone = input?.value.trim() || "";
+          if (!phone) {
+            input?.focus();
+            toast("请输入联系电话");
+          } else {
+            state.modal.extraPhones = [...(state.modal.extraPhones || []), phone];
+            state.modal.phoneDraftOpen = true;
+            renderModal();
+            document.getElementById("newLeadPhoneInput")?.focus();
+          }
+        }
+      }
       if (action === "close-drawer") closeDrawer();
       if (action === "batch-assign") {
         const scope = actionTarget.dataset.scope || "lead";
@@ -5930,6 +6136,14 @@
       if (action === "new-opportunity") openModal("new-opp");
       if (action === "import-opportunities") openModal("import-opp");
       if (action === "show-invalid-help") openModal("invalid-help");
+      if (action === "new-lead") {
+        openModal("new-lead", {
+          source: actionTarget.dataset.source || "sea",
+          tags: [],
+          extraPhones: [],
+          phoneDraftOpen: false
+        });
+      }
       if (action === "sort-column") {
         const scope = actionTarget.dataset.scope;
         const key = actionTarget.dataset.key;
@@ -6066,6 +6280,7 @@
       if (event.target.id === "convertForm") submitConvert(event.target);
       if (event.target.id === "editForm") submitEdit(event.target);
       if (event.target.id === "newOppForm") submitNewOpportunity(event.target);
+      if (event.target.id === "newLeadForm") submitNewLead(event.target);
     });
 
     document.addEventListener("reset", event => {
