@@ -1028,6 +1028,42 @@
       font-weight: 650;
     }
 
+    .source-choice-list {
+      min-height: 36px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .source-choice {
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px;
+      color: var(--ink-2);
+      background: #fff;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .source-choice:has(input:checked) {
+      color: #234fc9;
+      background: var(--brand-soft);
+      border-color: #bcd0ff;
+      font-weight: 650;
+    }
+
+    .source-choice input {
+      width: 14px;
+      height: 14px;
+      margin: 0;
+      accent-color: var(--brand);
+    }
+
     .table-panel {
       overflow: hidden;
     }
@@ -4027,7 +4063,9 @@
     }
 
     function sourceBadge(source) {
-      return `<span class="source-badge ${sourceClass[source] || ""}">${escapeHtml(source)}</span>`;
+      const sources = String(source || "").split(/[、,]/).filter(Boolean);
+      if (!sources.length) return "--";
+      return sources.map(item => `<span class="source-badge ${sourceClass[item] || ""}">${escapeHtml(item)}</span>`).join("");
     }
 
     function tagsHtml(tags = []) {
@@ -4106,7 +4144,10 @@
       if (filters.province && row.province !== filters.province) return false;
       if (filters.city && row.city !== filters.city) return false;
       if (filters.district && row.district !== filters.district) return false;
-      if (filters.source && row.source !== filters.source) return false;
+      if (filters.source) {
+        const rowSources = row.sources || String(row.source || "").split(/[、,]/);
+        if (!rowSources.includes(filters.source)) return false;
+      }
       if (filters.tag && !(row.tags || []).includes(filters.tag)) return false;
       if (!matchText(row.sales, filters.sales)) return false;
       if (!matchDate(row.createdAt, filters.startDate, filters.endDate)) return false;
@@ -4919,6 +4960,10 @@
           body: `
             <div class="modal-body-centered">
               <p class="confirm-copy">是否确定将 <strong>【${escapeHtml(lead?.merchant || "")}】</strong> 退回至公海？</p>
+              <div class="field full" style="width:100%;margin-top:12px">
+                <label class="required" for="returnReason">退回原因</label>
+                <textarea id="returnReason" required placeholder="请输入退回原因" style="min-height:88px"></textarea>
+              </div>
             </div>`,
           footer: `
             <button class="btn" type="button" data-action="close-modal">取消</button>
@@ -5100,18 +5145,38 @@
                     </div>` : ""}
                 </div>
               </div>
+              <div class="field full">
+                <label class="required">线索来源</label>
+                <div class="source-choice-list">
+                  ${["美团外卖", "淘宝闪购", "京东秒送"].map(source => `
+                    <label class="source-choice">
+                      <input type="checkbox" name="sources" value="${source}" ${(state.modal.sources || []).includes(source) ? "checked" : ""}>
+                      <span>${source}</span>
+                    </label>`).join("")}
+                </div>
+              </div>
               <div class="field">
-                <label class="required" for="newLeadSource">线索来源</label>
-                <select id="newLeadSource" name="source" required>
+                <label class="required" for="newLeadProvince">省</label>
+                <select id="newLeadProvince" name="province" data-action="new-lead-region" data-level="province" required>
                   <option value="">请选择</option>
-                  <option value="美团外卖">美团外卖</option>
-                  <option value="淘宝闪购">淘宝闪购</option>
-                  <option value="京东秒送">京东秒送</option>
+                  ${Object.keys(addressHierarchy).map(item => `<option value="${item}">${item}</option>`).join("")}
                 </select>
               </div>
               <div class="field">
-                <label class="required" for="newLeadAddress">地址</label>
-                <input id="newLeadAddress" name="address" type="text" required placeholder="请输入">
+                <label class="required" for="newLeadCity">市</label>
+                <select id="newLeadCity" name="city" data-action="new-lead-region" data-level="city" required disabled>
+                  <option value="">请先选择省</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="required" for="newLeadDistrict">区县</label>
+                <select id="newLeadDistrict" name="district" data-action="new-lead-region" data-level="district" required disabled>
+                  <option value="">请先选择市</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label class="required" for="newLeadAddressDetail">详细地址</label>
+                <input id="newLeadAddressDetail" name="addressDetail" type="text" required placeholder="请输入详细地址">
               </div>
               <div class="field">
                 <label for="newLeadMonthSales">月售</label>
@@ -5630,9 +5695,22 @@
     function confirmReturn() {
       const lead = leads.find(item => item.id === state.modal.id);
       if (!lead) return;
+      const reasonInput = document.getElementById("returnReason");
+      const reason = reasonInput?.value.trim() || "";
+      if (!reason) {
+        reasonInput?.focus();
+        toast("请输入退回原因");
+        return;
+      }
       lead.returnCount = Number(lead.returnCount || 0) + 1;
       lead.status = lead.returnCount >= 2 ? "invalid" : "pool";
       lead.sales = "";
+      if (!operationRecordsByEntity[lead.id]) operationRecordsByEntity[lead.id] = [];
+      operationRecordsByEntity[lead.id].unshift({
+        time: "2026-10-15 17:30:00",
+        content: `人工退回公海，退回原因：${reason}`,
+        operator: CURRENT_USER
+      });
       closeModal();
       closeDrawer();
       renderAll();
@@ -5717,8 +5795,44 @@
       toast("商机已新增");
     }
 
+    function updateNewLeadRegion(level) {
+      const province = document.getElementById("newLeadProvince");
+      const city = document.getElementById("newLeadCity");
+      const district = document.getElementById("newLeadDistrict");
+      if (!province || !city || !district) return;
+      if (level === "province") {
+        const cities = province.value && addressHierarchy[province.value]
+          ? Object.keys(addressHierarchy[province.value])
+          : [];
+        city.innerHTML = `<option value="">${province.value ? "请选择市" : "请先选择省"}</option>${cities.map(item => `<option value="${item}">${item}</option>`).join("")}`;
+        city.disabled = !province.value;
+        district.innerHTML = '<option value="">请先选择市</option>';
+        district.disabled = true;
+      }
+      if (level === "city") {
+        const districts = province.value && city.value && addressHierarchy[province.value]?.[city.value]
+          ? addressHierarchy[province.value][city.value]
+          : [];
+        district.innerHTML = `<option value="">${city.value ? "请选择区县" : "请先选择市"}</option>${districts.map(item => `<option value="${item}">${item}</option>`).join("")}`;
+        district.disabled = !city.value;
+      }
+    }
+
     function submitNewLead(form) {
       const formData = new FormData(form);
+      const sources = formData.getAll("sources").map(String);
+      const province = String(formData.get("province") || "");
+      const city = String(formData.get("city") || "");
+      const district = String(formData.get("district") || "");
+      const addressDetail = String(formData.get("addressDetail") || "").trim();
+      if (!sources.length) {
+        toast("请选择至少一个线索来源");
+        return;
+      }
+      if (!province || !city || !district || !addressDetail) {
+        toast("请完整填写省市、区县和详细地址");
+        return;
+      }
       const now = "2026-10-15 15:30:00";
       const fromMyLeads = state.modal.source === "lead";
       const newLead = {
@@ -5726,14 +5840,15 @@
         merchant: String(formData.get("merchant") || "").trim(),
         contact: "",
         phone: String(formData.get("phone") || "").trim(),
-        address: String(formData.get("address") || "").trim(),
-        province: "",
-        city: "",
-        district: "",
+        address: `${province}${city}${district}${addressDetail}`,
+        province,
+        city,
+        district,
         extraPhones: [...(state.modal.extraPhones || [])],
         monthSales: Number(formData.get("monthSales")) || 0,
         rating: Number(formData.get("rating")) || 0,
-        source: String(formData.get("source") || ""),
+        source: sources.join("、"),
+        sources,
         tags: [...(state.modal.tags || [])],
         status: fromMyLeads ? "assigned" : "pool",
         sales: fromMyLeads ? CURRENT_USER : "",
@@ -6186,6 +6301,14 @@
         document.querySelectorAll(".assign-person").forEach(person => {
           person.classList.toggle("selected", person.contains(event.target));
         });
+      }
+
+      if (event.target.dataset.action === "new-lead-region") {
+        updateNewLeadRegion(event.target.dataset.level);
+      }
+
+      if (event.target.name === "sources") {
+        state.modal.sources = new FormData(document.getElementById("newLeadForm")).getAll("sources").map(String);
       }
 
       if (event.target.dataset.action === "follow-type-select") {
