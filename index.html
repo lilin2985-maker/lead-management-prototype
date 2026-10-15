@@ -563,6 +563,25 @@
       height: 15px;
     }
 
+    .invalid-help-icon {
+      width: 15px;
+      height: 15px;
+      display: inline-grid;
+      place-items: center;
+      color: currentColor;
+      opacity: .58;
+      cursor: help;
+    }
+
+    .invalid-help-icon svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .invalid-help-icon:hover {
+      opacity: 1;
+    }
+
     .page-actions {
       display: flex;
       align-items: center;
@@ -2820,10 +2839,11 @@
               已分配 <span class="list-tab-count" id="seaAssignedTabCount">0</span>
             </button>
             <button class="list-tab" type="button" data-action="switch-list-tab" data-scope="sea" data-tab="invalid">
-              无效线索 <span class="list-tab-count" id="seaInvalidTabCount">0</span>
-            </button>
-            <button class="info-icon-button" type="button" data-action="show-invalid-help" data-tooltip="说明" aria-label="无效线索说明">
-              <svg><use href="#i-alert"></use></svg>
+              无效线索
+              <span class="invalid-help-icon" title="同一线索分配给 2 个电销员跟进均无果，再次落入公海时进入线索公海-无效线索池。" aria-label="无效线索说明">
+                <svg><use href="#i-alert"></use></svg>
+              </span>
+              <span class="list-tab-count" id="seaInvalidTabCount">0</span>
             </button>
           </div>
 
