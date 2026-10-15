@@ -5322,6 +5322,10 @@
                   <div class="field full" id="followReturnSeaField" style="display:${showReturnSea ? "" : "none"}">
                     <div class="field-note">首次联系商家，商家表示无合作意向时，线索退回线索公海待分配界面；若两次联系商家，对方均无合作意向，该线索将退回至线索公海的无效线索列表。</div>
                   </div>` : ""}
+                ${state.drawer?.type === "opp" ? `
+                  <div class="field full">
+                    <div class="field-note">首次联系商家，商家表示无合作意向时，线索退回线索公海待分配界面；若两次联系商家，对方均无合作意向，该线索将退回至线索公海的无效线索列表。</div>
+                  </div>` : ""}
                 <div class="field full follow-convert-fields" id="followConvertFields" style="display:${showConvertFields ? "contents" : "none"}">
                   <div class="field">
                     <label class="required" for="followContact">联系人</label>
