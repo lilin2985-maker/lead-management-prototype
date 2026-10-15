@@ -1751,6 +1751,41 @@
       height: 13px;
     }
 
+    .detail-tag-view {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .detail-tag-view .tag-list {
+      min-width: 0;
+    }
+
+    .detail-tag-view .tag-edit-button {
+      flex: none;
+    }
+
+    .tag-editor {
+      min-width: 0;
+    }
+
+    .tag-editor .tag-picker {
+      min-width: 210px;
+    }
+
+    .tag-edit-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .tag-edit-actions .btn {
+      height: 28px;
+      padding: 0 10px;
+    }
+
     .phone-edit-list {
       display: flex;
       flex-direction: column;
@@ -4049,6 +4084,7 @@
       },
       drawer: null,
       detailEdit: null,
+      tagEdit: null,
       detailPhoneDraft: null,
       followSearch: "",
       followMenu: null,
@@ -4698,7 +4734,7 @@
 
     function editTagChoices(selectedTags, context = "modal") {
       const protectedTags = ["一面未转化", "到期释放"];
-      const pickerId = context === "detail" ? "detailTagPicker" : "editTagPicker";
+      const pickerId = context === "tagEdit" ? "tagEditPicker" : context === "detail" ? "detailTagPicker" : "editTagPicker";
       return `
         <div class="tag-picker" id="${pickerId}">
           <button class="tag-picker-trigger" type="button" data-action="toggle-tag-picker" aria-expanded="false">
@@ -5334,36 +5370,39 @@
       }
     }
 
-    function startDetailEdit(record, isLead) {
-      state.detailEdit = {
+    function startTagEdit(record, isLead) {
+      state.tagEdit = {
         entity: isLead ? "lead" : "opp",
         id: record.id,
         tags: [...(record.tags || [])]
       };
+      state.detailPhoneDraft = null;
       renderDrawer();
     }
 
-    function cancelDetailEdit() {
-      state.detailEdit = null;
+    function cancelTagEdit() {
+      state.tagEdit = null;
       renderDrawer();
     }
 
-    function saveDetailEdit() {
-      if (!state.detailEdit) return;
-      const record = state.detailEdit.entity === "opp"
-        ? opportunities.find(item => item.id === state.detailEdit.id)
-        : leads.find(item => item.id === state.detailEdit.id);
+    function saveTagEdit() {
+      if (!state.tagEdit) return;
+      const record = state.tagEdit.entity === "opp"
+        ? opportunities.find(item => item.id === state.tagEdit.id)
+        : leads.find(item => item.id === state.tagEdit.id);
       if (!record) return;
-      record.tags = [...state.detailEdit.tags];
-      state.detailEdit = null;
+      const protectedTags = (record.tags || []).filter(tag => ["一面未转化", "到期释放"].includes(tag));
+      record.tags = [...new Set([...state.tagEdit.tags, ...protectedTags])];
+      state.tagEdit = null;
       renderAll();
       renderDrawer();
-      toast("标签和联系电话已更新");
+      toast("标签已更新");
     }
 
     function openDrawer(type, id) {
       state.drawer = { type, id };
       state.detailEdit = null;
+      state.tagEdit = null;
       state.detailPhoneDraft = null;
       state.followSearch = "";
       state.followMenu = null;
@@ -5373,6 +5412,7 @@
     function closeDrawer() {
       state.drawer = null;
       state.detailEdit = null;
+      state.tagEdit = null;
       state.detailPhoneDraft = null;
       state.followMenu = null;
       document.getElementById("drawerRoot").innerHTML = "";
@@ -5398,20 +5438,14 @@
       }
 
       scrim.classList.add("open");
-      const editingDetail = state.detailEdit?.id === record.id && state.detailEdit?.entity === (isLead ? "lead" : "opp");
       const showSeaAssign = isLead
         && state.view === "sea"
         && state.listTabs.sea === "pool"
         && record.status === "pool"
         && state.role === "manager";
-      const canEditDetail = state.view !== "sea";
-      const detailActions = editingDetail
-        ? `
-          <button class="btn small" type="button" data-action="cancel-detail-edit">取消</button>
-          <button class="btn small primary" type="button" data-action="save-detail-edit">保存</button>`
-        : `
-          ${showSeaAssign ? `<button class="btn small outline-pill" type="button" data-action="assign" data-id="${record.id}" data-source="sea">分配</button>` : ""}
-          ${canEditDetail ? `<button class="btn small outline-pill" type="button" data-action="start-detail-edit">编辑</button>` : ""}`;
+      const detailActions = showSeaAssign
+        ? `<button class="btn small outline-pill" type="button" data-action="assign" data-id="${record.id}" data-source="sea">分配</button>`
+        : "";
 
       root.innerHTML = `
         <aside class="drawer open" role="dialog" aria-modal="true" aria-label="${escapeHtml(record.merchant)}详情">
@@ -5444,7 +5478,7 @@
 
     function detailPhoneManager(record) {
       const draftOpen = state.detailPhoneDraft?.id === record.id;
-      const editing = state.detailEdit?.id === record.id;
+      const editable = state.view !== "sea";
       const phones = record.extraPhones || [];
       if (state.view === "sea") {
         return `
@@ -5467,15 +5501,15 @@
           <div class="phone-edit-row">
             <span>电话1</span>
             <input type="text" value="${escapeHtml(record.phone || "")}" readonly placeholder="请输入">
-            ${editing ? `<button class="btn small" type="button" data-action="open-detail-phone">新增</button>` : `<span></span>`}
+            ${editable ? `<button class="btn small" type="button" data-action="open-detail-phone">新增</button>` : `<span></span>`}
           </div>
           ${phones.map((phone, index) => `
             <div class="phone-edit-row">
               <span>电话${index + 2}</span>
               <input type="text" value="${escapeHtml(phone)}" readonly placeholder="请输入">
-              ${editing ? `<button class="btn small danger" type="button" data-action="delete-detail-phone" data-index="${index}">删除</button>` : `<span></span>`}
+              ${editable ? `<button class="btn small danger" type="button" data-action="delete-detail-phone" data-index="${index}">删除</button>` : `<span></span>`}
             </div>`).join("")}
-          ${editing && draftOpen ? `
+          ${editable && draftOpen ? `
             <div class="phone-edit-row">
               <span>电话${phones.length + 2}</span>
               <input id="detailExtraPhoneInput" type="text" placeholder="请输入联系电话">
@@ -5485,8 +5519,24 @@
     }
 
     function renderDrawerBasic(record, isLead) {
-      const editing = state.detailEdit?.id === record.id && state.detailEdit?.entity === (isLead ? "lead" : "opp");
-      const tagsValue = editing ? editTagChoices(state.detailEdit.tags, "detail") : tagsHtml(record.tags || []);
+      const entity = isLead ? "lead" : "opp";
+      const tagEditing = state.tagEdit?.id === record.id && state.tagEdit?.entity === entity;
+      const tagsValue = state.view === "sea"
+        ? tagsHtml(record.tags || [])
+        : tagEditing
+          ? `
+            <div class="tag-editor">
+              <div class="tag-edit-actions">
+                <button class="btn small" type="button" data-action="cancel-tag-edit">取消</button>
+                <button class="btn small primary" type="button" data-action="save-tag-edit">保存</button>
+              </div>
+              ${editTagChoices(state.tagEdit.tags, "tagEdit")}
+            </div>`
+          : `
+            <div class="detail-tag-view">
+              ${tagsHtml(record.tags || [])}
+              <button class="tag-edit-button" type="button" data-action="start-tag-edit" data-tooltip="编辑标签" aria-label="编辑标签">${icon("pencil")}</button>
+            </div>`;
       const phonesValue = detailPhoneManager(record);
       const rows = isLead ? [
         ["线索编号", record.id], ["联系电话", phonesValue],
@@ -6109,16 +6159,16 @@
       }
       if (action === "open-lead-drawer") openDrawer("lead", actionTarget.dataset.id);
       if (action === "open-opp-drawer") openDrawer("opp", actionTarget.dataset.id);
-      if (action === "start-detail-edit") {
+      if (action === "start-tag-edit") {
         const record = state.drawer?.type === "opp"
           ? opportunities.find(item => item.id === state.drawer.id)
           : leads.find(item => item.id === state.drawer?.id);
-        if (record) startDetailEdit(record, state.drawer.type === "lead");
+        if (record && state.view !== "sea") startTagEdit(record, state.drawer.type === "lead");
       }
-      if (action === "cancel-detail-edit") cancelDetailEdit();
-      if (action === "save-detail-edit") saveDetailEdit();
+      if (action === "cancel-tag-edit") cancelTagEdit();
+      if (action === "save-tag-edit") saveTagEdit();
       if (action === "open-detail-phone") {
-        if (!state.drawer) return;
+        if (!state.drawer || state.view === "sea") return;
         state.detailPhoneDraft = { type: state.drawer.type, id: state.drawer.id };
         renderDrawer();
         document.getElementById("detailExtraPhoneInput")?.focus();
@@ -6362,12 +6412,13 @@
       if (event.target.dataset.action === "toggle-edit-tag") {
         const tag = event.target.value;
         const context = event.target.dataset.editContext || "modal";
-        const store = context === "detail" ? state.detailEdit : state.modal;
+        const store = context === "tagEdit" ? state.tagEdit : context === "detail" ? state.detailEdit : state.modal;
+        if (!store) return;
         const tags = store?.tags || [];
         store.tags = event.target.checked
           ? [...new Set([...tags, tag])]
           : tags.filter(item => item !== tag);
-        const pickerId = context === "detail" ? "detailTagPicker" : "editTagPicker";
+        const pickerId = context === "tagEdit" ? "tagEditPicker" : context === "detail" ? "detailTagPicker" : "editTagPicker";
         const value = document.querySelector(`#${pickerId} .tag-picker-value`);
         if (value) value.textContent = store.tags.length ? store.tags.join("、") : "请选择标签";
       }
