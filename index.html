@@ -540,6 +540,29 @@
       background: rgba(255, 255, 255, .2);
     }
 
+    .info-icon-button {
+      width: 30px;
+      height: 30px;
+      display: inline-grid;
+      place-items: center;
+      margin-left: 4px;
+      padding: 0;
+      color: var(--muted);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+    }
+
+    .info-icon-button:hover {
+      color: var(--brand);
+      border-color: #bfcffb;
+    }
+
+    .info-icon-button svg {
+      width: 15px;
+      height: 15px;
+    }
+
     .page-actions {
       display: flex;
       align-items: center;
@@ -1044,6 +1067,35 @@
       background: #f8f9fb;
       font-size: 11px;
       font-weight: 700;
+    }
+
+    .sort-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0;
+      color: inherit;
+      background: transparent;
+      border: 0;
+      font-weight: inherit;
+    }
+
+    .sort-header svg {
+      width: 13px;
+      height: 13px;
+      color: #98a2b3;
+    }
+
+    .sort-header.active {
+      color: var(--brand);
+    }
+
+    .sort-header.active svg {
+      color: var(--brand);
+    }
+
+    .sort-header.active[data-direction="desc"] svg {
+      transform: rotate(180deg);
     }
 
     .data-table tbody tr {
@@ -1657,6 +1709,20 @@
     .phone-edit-row input[readonly] {
       color: var(--muted);
       background: #f8fafc;
+    }
+
+    .phone-readonly-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .phone-readonly-value {
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      color: var(--ink-2);
+      font-size: 12px;
     }
 
     .tag-picker {
@@ -2628,6 +2694,7 @@
     <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v6M14 11v6"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></symbol>
+    <symbol id="i-sort" viewBox="0 0 24 24"><path d="m8 9 4-4 4 4M16 15l-4 4-4-4"/></symbol>
     <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 14h4l2 3h4l2-3h4"/></symbol>
     <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
   </svg>
@@ -2754,6 +2821,9 @@
             </button>
             <button class="list-tab" type="button" data-action="switch-list-tab" data-scope="sea" data-tab="invalid">
               无效线索 <span class="list-tab-count" id="seaInvalidTabCount">0</span>
+            </button>
+            <button class="info-icon-button" type="button" data-action="show-invalid-help" data-tooltip="说明" aria-label="无效线索说明">
+              <svg><use href="#i-alert"></use></svg>
             </button>
           </div>
 
@@ -3581,6 +3651,7 @@
         serviceOpenAt: "2026-10-12 08:30:00",
         creator: "张三",
         createdAt: "2026-10-12 08:12:36",
+        assignedAt: "2026-10-12 08:12:36",
         note: "已建服务群，等待门店授权",
         signed: "已签约"
       },
@@ -3609,6 +3680,7 @@
         serviceOpenAt: "",
         creator: "李四",
         createdAt: "2026-10-11 17:42:10",
+        assignedAt: "2026-10-11 17:42:10",
         note: "重点跟进差评回复机制",
         signed: "未签约"
       },
@@ -3637,6 +3709,7 @@
         serviceOpenAt: "2026-10-11 10:15:00",
         creator: "张三",
         createdAt: "2026-10-10 15:21:48",
+        assignedAt: "2026-10-10 15:21:48",
         note: "已完成首批五家门店数据接入",
         signed: "已签约"
       },
@@ -3665,6 +3738,7 @@
         serviceOpenAt: "",
         creator: "王芳",
         createdAt: "2026-10-09 11:03:26",
+        assignedAt: "2026-10-09 11:03:26",
         note: "预算暂未明确",
         signed: "未签约"
       }
@@ -3816,6 +3890,7 @@
       { key: "serviceOpened", label: "是否进入计费阶段", width: 140 },
       { key: "serviceOpenAt", label: "开始计费时间", width: 152 },
       { key: "creator", label: "创建人", width: 78 },
+      { key: "assignedAt", label: "派单时间", width: 152 },
       { key: "createdAt", label: "创建时间", width: 152 },
       { key: "note", label: "备注", width: 190 },
       { key: "actions", label: "操作", width: 118, locked: true }
@@ -3828,6 +3903,11 @@
         sea: "pool",
         lead: "pending",
         opp: "pending"
+      },
+      sortStates: {
+        sea: { key: "createdAt", direction: "desc" },
+        lead: { key: "assignedAt", direction: "asc" },
+        opp: { key: "createdAt", direction: "desc" }
       },
       filters: {
         sea: {},
@@ -3973,15 +4053,15 @@
         : state.listTabs.sea === "invalid"
           ? "invalid"
           : "pool";
-      return leads
+      const rows = leads
         .filter(row => row.status === expectedStatus && matchesBaseFilters(row, state.filters.sea))
-        .filter(row => matchDate(row.assignedAt, state.filters.sea.assignStartDate, state.filters.sea.assignEndDate))
-        .sort(compareSeaPriority);
+        .filter(row => matchDate(row.assignedAt, state.filters.sea.assignStartDate, state.filters.sea.assignEndDate));
+      return sortRows("sea", rows);
     }
 
     function getLeadRows() {
       const filters = state.filters.lead;
-      return leads
+      const rows = leads
         .filter(row => row.status === "assigned")
         .filter(row => getLeadStage(row) === state.listTabs.lead)
         .filter(row => state.role === "manager" || row.sales === CURRENT_USER)
@@ -3991,8 +4071,8 @@
           const remainingDays = getRemainingFollowDays(row);
           return remainingDays === Number(filters.remainingDays);
         })
-        .filter(row => matchDate(row.assignedAt, filters.assignStartDate, filters.assignEndDate))
-        .sort(compareLeadPriority);
+        .filter(row => matchDate(row.assignedAt, filters.assignStartDate, filters.assignEndDate));
+      return sortRows("lead", rows);
     }
 
     function getRemainingFollowDays(row) {
@@ -4025,9 +4105,32 @@
       return String(right.createdAt).localeCompare(String(left.createdAt));
     }
 
+    function sortRows(scope, rows) {
+      const sortState = state.sortStates[scope];
+      const sorted = [...rows].sort((left, right) => {
+        const leftValue = String(left[sortState.key] || "");
+        const rightValue = String(right[sortState.key] || "");
+        if (!leftValue && !rightValue) return 0;
+        if (!leftValue) return 1;
+        if (!rightValue) return -1;
+        return sortState.direction === "asc"
+          ? leftValue.localeCompare(rightValue)
+          : rightValue.localeCompare(leftValue);
+      });
+
+      if (scope === "lead") {
+        sorted.sort((left, right) => {
+          const leftPinned = (left.tags || []).includes("一面未转化") ? 0 : 1;
+          const rightPinned = (right.tags || []).includes("一面未转化") ? 0 : 1;
+          return leftPinned - rightPinned;
+        });
+      }
+      return sorted;
+    }
+
     function getOppRows() {
       const filters = state.filters.opp;
-      return opportunities
+      const rows = opportunities
         .filter(row => state.listTabs.opp === "cooperating" ? row.serviceOpened === "已开通" : row.serviceOpened === "未开通")
         .filter(row => matchText(row.merchant, filters.merchant))
         .filter(row => !filters.province || row.province === filters.province)
@@ -4047,6 +4150,7 @@
         .filter(row => !filters.tag || (row.tags || []).includes(filters.tag))
         .filter(row => matchDate(row.createdAt, filters.startDate, filters.endDate))
         .filter(row => matchDate(row.serviceOpenAt, filters.serviceStartDate, filters.serviceEndDate));
+      return sortRows("opp", rows);
     }
 
     const columnSets = {
@@ -4185,7 +4289,7 @@
         <tr>
           <th class="check-cell"><input type="checkbox" data-action="select-all" data-scope="${scope}" aria-label="全选"></th>
           ${visibleColumns.map(column => `
-            <th class="${column.key === "actions" ? "sticky-action" : ""}" style="width:${column.width}px">${escapeHtml(column.label)}</th>`).join("")}
+            <th class="${column.key === "actions" ? "sticky-action" : ""}" style="width:${column.width}px">${columnHeader(scope, column)}</th>`).join("")}
         </tr>`;
 
       document.getElementById(`${scope}Body`).innerHTML = rows.length ? rows.map(row => `
@@ -4199,6 +4303,17 @@
       document.getElementById(`${scope}SelectedCount`).textContent = state.selection[scope].size;
       const allCheckbox = document.querySelector(`[data-action="select-all"][data-scope="${scope}"]`);
       if (allCheckbox) allCheckbox.checked = rows.length > 0 && rows.every(row => state.selection[scope].has(row.id));
+    }
+
+    function columnHeader(scope, column) {
+      if (!["createdAt", "assignedAt"].includes(column.key)) return escapeHtml(column.label);
+      const sortState = state.sortStates[scope];
+      const active = sortState.key === column.key;
+      return `
+        <button class="sort-header ${active ? "active" : ""}" type="button" data-action="sort-column" data-scope="${scope}" data-key="${column.key}" data-direction="${active ? sortState.direction : "asc"}">
+          ${escapeHtml(column.label)}
+          ${icon("sort")}
+        </button>`;
     }
 
     function renderSeaTable() {
@@ -4846,6 +4961,14 @@
         });
       }
 
+      if (type === "invalid-help") {
+        root.innerHTML = modalShell({
+          title: "无效线索说明",
+          body: `<p class="confirm-copy">同一线索分配给 2 个电销员跟进均无果，再次落入公海时进入线索公海-无效线索池。</p>`,
+          footer: `<button class="btn primary" type="button" data-action="close-modal">知道了</button>`
+        });
+      }
+
       if (type === "import-opp") {
         root.innerHTML = modalShell({
           title: "导入商机",
@@ -5052,16 +5175,16 @@
       const phones = record.extraPhones || [];
       if (state.view === "sea") {
         return `
-          <div class="phone-edit-list">
+          <div class="phone-readonly-list">
             <div class="phone-edit-row">
               <span>联系电话</span>
-              <input type="text" value="${escapeHtml(record.phone || "")}" readonly placeholder="请输入">
+              <span class="phone-readonly-value">${phoneCell(record.phone)}</span>
               <span></span>
             </div>
             ${phones.map((phone, index) => `
               <div class="phone-edit-row">
                 <span>电话${index + 2}</span>
-                <input type="text" value="${escapeHtml(phone)}" readonly placeholder="请输入">
+                <span class="phone-readonly-value">${phoneCell(phone)}</span>
                 <span></span>
               </div>`).join("")}
           </div>`;
@@ -5166,6 +5289,7 @@
       const records = (followRecords[entityId] || [])
         .filter(record => !state.followSearch || record.content.includes(state.followSearch) || record.author.includes(state.followSearch));
       const canAddFollow = state.view !== "sea";
+      const canManageFollow = state.view !== "sea";
 
       return `
         <section class="follow-panel">
@@ -5186,16 +5310,17 @@
                 <strong>${escapeHtml(record.author)}</strong>
                 <span class="status-badge ${record.type === "转商机" ? "status-converted" : "status-pool"}">${escapeHtml(record.type || "需求沟通中")}</span>
                 <span class="follow-time">${escapeHtml(record.time.slice(5, 16))}</span>
-                <div class="more-wrap">
-                  <button class="more-button" type="button" data-action="follow-menu" data-id="${record.id}" aria-label="更多操作">${icon("more")}</button>
-                  ${state.followMenu === record.id ? `
-                    <div class="row-menu">
-                      ${record.author === CURRENT_USER ? `
-                        <button type="button" data-action="edit-follow" data-id="${record.id}">${icon("pencil")}编辑</button>
-                        <button type="button" class="danger" data-action="delete-follow" data-id="${record.id}">${icon("trash")}删除</button>
-                      ` : `<button type="button" disabled>仅本人可操作</button>`}
-                    </div>` : ""}
-                </div>
+                ${canManageFollow ? `
+                  <div class="more-wrap">
+                    <button class="more-button" type="button" data-action="follow-menu" data-id="${record.id}" aria-label="更多操作">${icon("more")}</button>
+                    ${state.followMenu === record.id ? `
+                      <div class="row-menu">
+                        ${record.author === CURRENT_USER ? `
+                          <button type="button" data-action="edit-follow" data-id="${record.id}">${icon("pencil")}编辑</button>
+                          <button type="button" class="danger" data-action="delete-follow" data-id="${record.id}">${icon("trash")}删除</button>
+                        ` : `<button type="button" disabled>仅本人可操作</button>`}
+                      </div>` : ""}
+                  </div>` : ""}
               </div>
               ${record.content ? `<p class="follow-content">${escapeHtml(record.content)}</p>` : ""}
               ${record.type === "转商机" ? `
@@ -5363,6 +5488,7 @@
         serviceOpenAt: "",
         creator: CURRENT_USER,
         createdAt: now,
+        assignedAt: now,
         note: formData.get("note") || "",
         extraPhones: [...(state.modal.extraPhones || [])],
         signed: sourceLead?.signed || "未签约"
@@ -5403,6 +5529,7 @@
         serviceOpenAt: "",
         creator: CURRENT_USER,
         createdAt: now,
+        assignedAt: now,
         note: "",
         signed: "未签约"
       });
@@ -5773,6 +5900,15 @@
       if (action === "export") exportScope(actionTarget.dataset.scope);
       if (action === "new-opportunity") openModal("new-opp");
       if (action === "import-opportunities") openModal("import-opp");
+      if (action === "show-invalid-help") openModal("invalid-help");
+      if (action === "sort-column") {
+        const scope = actionTarget.dataset.scope;
+        const key = actionTarget.dataset.key;
+        const current = state.sortStates[scope];
+        const direction = current.key === key && current.direction === "asc" ? "desc" : "asc";
+        state.sortStates[scope] = { key, direction };
+        renderConfigurableTable(scope);
+      }
       if (action === "confirm-import-opp") {
         const file = document.getElementById("importOppFile")?.files?.[0];
         if (!file) {
