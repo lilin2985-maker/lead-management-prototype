@@ -2963,6 +2963,13 @@
                   <input id="seaSales" type="text" data-filter-scope="sea" data-filter-key="sales" placeholder="模糊搜索">
                 </div>
               </div>
+              <div class="field" id="seaAssignerField" style="display:none">
+                <label for="seaAssigner">分配人</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="seaAssigner" type="text" data-filter-scope="sea" data-filter-key="assigner" placeholder="请输入分配人">
+                </div>
+              </div>
               <div class="field wide">
                 <label>创建时间</label>
                 <div class="date-range">
@@ -3096,10 +3103,10 @@
                 </select>
               </div>
               <div class="field">
-                <label for="leadSales">电销员</label>
+                <label for="leadAssigner">分配人</label>
                 <div class="input-wrap">
                   <svg><use href="#i-search"></use></svg>
-                  <input id="leadSales" type="text" data-filter-scope="lead" data-filter-key="sales" placeholder="模糊搜索">
+                  <input id="leadAssigner" type="text" data-filter-scope="lead" data-filter-key="assigner" placeholder="请输入分配人">
                 </div>
               </div>
               <div class="field">
@@ -3257,6 +3264,13 @@
                 <div class="input-wrap">
                   <svg><use href="#i-search"></use></svg>
                   <input id="oppSales" type="text" data-filter-scope="opp" data-filter-key="sales" placeholder="模糊搜索">
+                </div>
+              </div>
+              <div class="field opp-filter-wide">
+                <label for="oppAssigner">分配人</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="oppAssigner" type="text" data-filter-scope="opp" data-filter-key="assigner" placeholder="请输入分配人">
                 </div>
               </div>
               <div class="field opp-filter-wide">
@@ -3952,6 +3966,7 @@
       { key: "reviews", label: "评价数", width: 76 },
       { key: "goodReviews", label: "好评数", width: 76 },
       { key: "badReviews", label: "差评数", width: 76 },
+      { key: "assignedBy", label: "分配人", width: 86 },
       { key: "creator", label: "创建人", width: 86 },
       { key: "assignedAt", label: "派单时间", width: 152 },
       { key: "lastFollowAt", label: "最近跟进时间", width: 152 },
@@ -3970,10 +3985,10 @@
       { key: "monthSales", label: "月售", width: 78 },
       { key: "rating", label: "评分", width: 66 },
       { key: "source", label: "线索来源", width: 96 },
-      { key: "sales", label: "电销员", width: 84 },
       { key: "reviews", label: "评价数", width: 76 },
       { key: "goodReviews", label: "好评数", width: 76 },
       { key: "badReviews", label: "差评数", width: 76 },
+      { key: "assignedBy", label: "分配人", width: 86 },
       { key: "creator", label: "创建人", width: 86 },
       { key: "assignedAt", label: "派单时间", width: 152 },
       { key: "lastFollowAt", label: "最近跟进时间", width: 152 },
@@ -4000,6 +4015,7 @@
       { key: "status", label: "状态", width: 82 },
       { key: "serviceOpened", label: "是否进入计费阶段", width: 140 },
       { key: "serviceOpenAt", label: "开始计费时间", width: 152 },
+      { key: "assignedBy", label: "分配人", width: 86 },
       { key: "creator", label: "创建人", width: 78 },
       { key: "assignedAt", label: "派单时间", width: 152 },
       { key: "lastFollowAt", label: "最近跟进时间", width: 152 },
@@ -4160,6 +4176,7 @@
       }
       if (filters.tag && !(row.tags || []).includes(filters.tag)) return false;
       if (!matchText(row.sales, filters.sales)) return false;
+      if (!matchText(row.assignedBy, filters.assigner)) return false;
       if (!matchDate(row.createdAt, filters.startDate, filters.endDate)) return false;
       return true;
     }
@@ -4269,6 +4286,7 @@
         .filter(row => matchText(row.contact, filters.contact))
         .filter(row => matchText([row.phone, ...(row.extraPhones || [])].join(" "), filters.phone))
         .filter(row => !filters.sales || matchText(row.sales, filters.sales))
+        .filter(row => matchText(row.assignedBy, filters.assigner))
         .filter(row => matchText(row.workOwner, filters.workOwner))
         .filter(row => !filters.groupBuilt || row.groupBuilt === filters.groupBuilt)
         .filter(row => !filters.intent || row.intent === filters.intent)
@@ -4394,6 +4412,8 @@
             return escapeHtml(systemCreators.includes(row.creator) ? "系统" : row.creator || "系统");
           }
           return escapeHtml(row.creator);
+        case "assignedBy":
+          return escapeHtml(row.assignedBy || (row.sales ? CURRENT_USER : "系统"));
         case "createdAt":
           return escapeHtml(row.createdAt);
         case "assignedAt":
@@ -4615,6 +4635,9 @@
 
       const seaSalesField = document.getElementById("seaSalesField");
       if (seaSalesField) seaSalesField.style.display = state.listTabs.sea === "assigned" ? "" : "none";
+
+      const seaAssignerField = document.getElementById("seaAssignerField");
+      if (seaAssignerField) seaAssignerField.style.display = state.listTabs.sea === "pool" ? "none" : "";
 
       const seaFollowTimeField = document.getElementById("seaFollowTimeField");
       if (seaFollowTimeField) {
@@ -5263,6 +5286,7 @@
                       <option value="否">否</option>
                       <option value="是">是</option>
                     </select>
+                    <div class="field-note">首次联系商家，商家表示无合作意向时，线索退回线索公海待分配界面；若两次联系商家，对方均无合作意向，该线索将退回至线索公海的无效线索列表。</div>
                   </div>` : ""}
                 <div class="field full follow-convert-fields" id="followConvertFields" style="display:${showConvertFields ? "contents" : "none"}">
                   <div class="field">
@@ -5688,6 +5712,7 @@
       targets.forEach(lead => {
         lead.status = "assigned";
         lead.sales = assignee;
+        lead.assignedBy = CURRENT_USER;
       });
       closeModal();
       closeDrawer();
@@ -5744,6 +5769,7 @@
         monthSales: sourceLead?.monthSales || 0,
         rating: sourceLead?.rating || 0,
         sales: sourceLead?.sales || CURRENT_USER,
+        assignedBy: sourceLead?.assignedBy || CURRENT_USER,
         workOwner: "未分配",
         source: "电销",
         tags: sourceLead?.tags || [],
@@ -5785,6 +5811,7 @@
         monthSales: 0,
         rating: 0,
         sales: CURRENT_USER,
+        assignedBy: CURRENT_USER,
         workOwner: "未分配",
         source: "电销",
         tags: [],
@@ -5862,6 +5889,7 @@
         tags: [...(state.modal.tags || [])],
         status: fromMyLeads ? "assigned" : "pool",
         sales: fromMyLeads ? CURRENT_USER : "",
+        assignedBy: fromMyLeads ? CURRENT_USER : "",
         leadSection: fromMyLeads ? "pending" : "following",
         assignedAt: fromMyLeads ? now : "",
         reviews: Number(formData.get("reviews")) || 0,
