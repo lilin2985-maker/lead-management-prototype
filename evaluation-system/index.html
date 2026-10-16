@@ -392,6 +392,23 @@
     .modal-footer { min-height: 60px; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 0 18px; border-top: 1px solid var(--line); }
     .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
     .form-grid .full { grid-column: 1 / -1; }
+    .form-section { padding: 15px; background: #fbfcfe; border: 1px solid var(--line); border-radius: 8px; }
+    .form-section + .form-section { margin-top: 14px; }
+    .form-section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
+    .form-section-head h4 { margin: 0; color: var(--ink); font-size: 12px; }
+    .form-section-head p { margin: 4px 0 0; color: var(--muted); font-size: 9px; }
+    .form-section-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .form-section-grid .full { grid-column: 1 / -1; }
+    .inline-note { display: flex; align-items: flex-start; gap: 7px; padding: 10px 11px; color: var(--muted); background: #fff; border: 1px solid var(--line); border-radius: 6px; font-size: 10px; }
+    .inline-note svg { width: 14px; height: 14px; margin-top: 1px; color: var(--brand); }
+    .toggle-row { min-height: 38px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 10px; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+    .toggle-row span { color: var(--ink-2); font-size: 10px; }
+    .toggle-row input { width: 15px; min-height: 0; accent-color: var(--brand); }
+    .dimension-config-list { display: grid; gap: 8px; }
+    .dimension-config-row { display: grid; grid-template-columns: 1.1fr 1.8fr 76px 68px 32px; gap: 8px; align-items: center; }
+    .dimension-config-row:first-child { color: var(--muted); font-size: 9px; }
+    .dimension-config-row .icon-button { width: 30px; height: 30px; }
+    .compact-actions { display: flex; align-items: center; gap: 7px; }
     .required::before { margin-right: 4px; color: var(--red); content: "*"; }
     .field-note { margin-top: 5px; color: var(--muted-2); font-size: 10px; }
     .choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
@@ -431,8 +448,12 @@
       .detail-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .modal-layer { padding: 0; align-items: flex-end; }
       .modal { width: 100%; max-height: 92vh; border-radius: 12px 12px 0 0; }
-      .form-grid, .choice-grid { grid-template-columns: 1fr; }
+      .form-grid, .choice-grid, .form-section-grid { grid-template-columns: 1fr; }
       .form-grid .full { grid-column: auto; }
+      .form-section-grid .full { grid-column: auto; }
+      .dimension-config-row { grid-template-columns: 1fr 1fr; padding: 9px; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+      .dimension-config-row:first-child { display: none; }
+      .dimension-config-row .icon-button { width: 100%; }
     }
     @media (max-width: 580px) {
       .metric-grid { grid-template-columns: 1fr; }
@@ -828,14 +849,14 @@
     }
 
     function renderStaticTables() {
-      document.getElementById("datasetBody").innerHTML = datasets.map(item => `
-        <tr><td><span class="cell-main">${escapeHtml(item.name)}</span><span class="cell-sub">Golden Dataset</span></td><td>${escapeHtml(item.scene)}</td><td><span class="badge blue">${escapeHtml(item.version)}</span></td><td class="mono">${item.count}</td><td>${escapeHtml(item.coverage)}</td><td class="mono">${item.critical}</td><td>${escapeHtml(item.owner)}</td><td class="mono">${escapeHtml(item.updated)}</td><td><div class="action-group"><button class="link-button" data-action="view-dataset">查看</button><span class="action-divider"></span><button class="link-button" data-action="publish-dataset">发布版本</button></div></td></tr>`).join("");
+      document.getElementById("datasetBody").innerHTML = datasets.map((item, index) => `
+        <tr><td><span class="cell-main">${escapeHtml(item.name)}</span><span class="cell-sub">Golden Dataset</span></td><td>${escapeHtml(item.scene)}</td><td><span class="badge blue">${escapeHtml(item.version)}</span></td><td class="mono">${item.count}</td><td>${escapeHtml(item.coverage)}</td><td class="mono">${item.critical}</td><td>${escapeHtml(item.owner)}</td><td class="mono">${escapeHtml(item.updated)}</td><td><div class="action-group"><button class="link-button" data-action="edit-dataset" data-index="${index}">编辑</button><span class="action-divider"></span><button class="link-button" data-action="publish-dataset" data-index="${index}">发布版本</button></div></td></tr>`).join("");
 
-      document.getElementById("caseBody").innerHTML = cases.map(item => `
-        <tr><td class="check-cell"><input type="checkbox" aria-label="选择${escapeHtml(item.id)}"></td><td class="mono">${escapeHtml(item.id)}</td><td><span class="cell-main">${escapeHtml(item.target)}</span></td><td>${escapeHtml(item.input)}</td><td>${escapeHtml(item.scene)}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${scorerChips(item.scorers)}</div></td><td>${badge(item.critical, item.critical === "是" ? "red" : "gray")}</td><td>${badge(item.difficulty, item.difficulty === "对抗" ? "violet" : item.difficulty === "困难" ? "amber" : "blue")}</td><td class="mono">${escapeHtml(item.updated)}</td><td><div class="action-group"><button class="link-button" data-action="view-case">查看</button><span class="action-divider"></span><button class="link-button" data-action="retry-case">单测</button></div></td></tr>`).join("");
+      document.getElementById("caseBody").innerHTML = cases.map((item, index) => `
+        <tr><td class="check-cell"><input type="checkbox" aria-label="选择${escapeHtml(item.id)}"></td><td class="mono">${escapeHtml(item.id)}</td><td><span class="cell-main">${escapeHtml(item.target)}</span></td><td>${escapeHtml(item.input)}</td><td>${escapeHtml(item.scene)}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${scorerChips(item.scorers)}</div></td><td>${badge(item.critical, item.critical === "是" ? "red" : "gray")}</td><td>${badge(item.difficulty, item.difficulty === "对抗" ? "violet" : item.difficulty === "困难" ? "amber" : "blue")}</td><td class="mono">${escapeHtml(item.updated)}</td><td><div class="action-group"><button class="link-button" data-action="edit-case" data-index="${index}">编辑</button><span class="action-divider"></span><button class="link-button" data-action="retry-case">单测</button></div></td></tr>`).join("");
 
-      document.getElementById("scorerBody").innerHTML = scorers.map(item => `
-        <tr><td><span class="cell-main">${escapeHtml(item.name)}</span><span class="cell-sub">${escapeHtml(item.dimensions)}</span></td><td>${escapeHtml(item.type)}</td><td><span class="badge gray">${escapeHtml(item.version)}</span></td><td>${escapeHtml(item.dimensions)}</td><td>${escapeHtml(item.threshold)}</td><td class="mono">${item.cases}</td><td class="mono">${escapeHtml(item.updated)}</td><td><div class="action-group"><button class="link-button" data-action="view-scorer">配置</button><span class="action-divider"></span><button class="link-button" data-action="copy-scorer">复制</button></div></td></tr>`).join("");
+      document.getElementById("scorerBody").innerHTML = scorers.map((item, index) => `
+        <tr><td><span class="cell-main">${escapeHtml(item.name)}</span><span class="cell-sub">${escapeHtml(item.dimensions)}</span></td><td>${escapeHtml(item.type)}</td><td><span class="badge gray">${escapeHtml(item.version)}</span></td><td>${escapeHtml(item.dimensions)}</td><td>${escapeHtml(item.threshold)}</td><td class="mono">${item.cases}</td><td class="mono">${escapeHtml(item.updated)}</td><td><div class="action-group"><button class="link-button" data-action="edit-scorer" data-index="${index}">编辑</button><span class="action-divider"></span><button class="link-button" data-action="copy-scorer">复制</button></div></td></tr>`).join("");
 
       document.getElementById("issueBody").innerHTML = issues.map(item => `
         <tr><td class="mono">${escapeHtml(item.id)}</td><td>${badge(item.source, item.source === "安全违规" ? "red" : item.source === "新增失败" ? "amber" : "blue")}</td><td><span class="cell-main">${escapeHtml(item.desc)}</span></td><td class="mono">${escapeHtml(item.task)}</td><td class="mono">${escapeHtml(item.caseId)}</td><td>${badge(item.level)}</td><td>${escapeHtml(item.owner)}</td><td>${badge(item.status)}</td><td class="mono">${escapeHtml(item.updated)}</td><td><button class="link-button" data-action="resolve-issue" data-id="${item.id}">${item.status === "已解决" ? "查看" : "处理"}</button></td></tr>`).join("");
@@ -930,6 +951,332 @@
     function closeDrawer() {
       document.getElementById("drawerRoot").classList.remove("open");
       document.getElementById("drawerScrim").classList.remove("open");
+    }
+
+    function modalShell({ title, body, footer, label = title }) {
+      return `
+        <div class="modal" role="dialog" aria-modal="true" aria-label="${escapeHtml(label)}">
+          <div class="modal-head"><h3>${escapeHtml(title)}</h3><button class="icon-button" type="button" data-action="close-modal" aria-label="关闭">${icon("x")}</button></div>
+          <div class="modal-body">${body}</div>
+          <div class="modal-footer">${footer}</div>
+        </div>`;
+    }
+
+    function openModalMarkup(html) {
+      const root = document.getElementById("modalRoot");
+      root.classList.add("open");
+      root.innerHTML = html;
+    }
+
+    function openDatasetModal(mode = "create", index = -1) {
+      const record = index >= 0 ? datasets[index] : null;
+      state.modal = { type: "dataset", mode, index };
+      const selectedCoverage = new Set((record?.coverage || "").split(" / ").filter(Boolean));
+      const coverageOptions = ["常见场景", "边界情况", "对抗场景", "安全测试", "多轮对话", "信息缺失", "工具异常"];
+      const body = `
+        <form id="datasetForm" class="form-grid">
+          <div class="form-section full">
+            <div class="form-section-head"><div><h4>基础信息</h4><p>数据集名称、业务场景和负责人用于资产检索与权限归属。</p></div>${record ? `<span class="badge blue">当前版本 ${escapeHtml(record.version)}</span>` : `<span class="badge gray">新数据集</span>`}</div>
+            <div class="form-section-grid">
+              <div class="field"><label class="required" for="datasetName">数据集名称</label><input id="datasetName" required value="${escapeHtml(record?.name || "")}" placeholder="请输入"></div>
+              <div class="field"><label class="required" for="datasetScene">业务场景</label><select id="datasetScene" required>${["知识问答", "经营分析", "工具执行", "内容安全", "多轮对话"].map(item => `<option ${record?.scene === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <div class="field"><label class="required" for="datasetOwner">负责人</label><select id="datasetOwner" required>${["张三", "李四", "王芳"].map(item => `<option ${record?.owner === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <div class="field"><label class="required" for="datasetVersion">版本号</label><input id="datasetVersion" required value="${escapeHtml(record?.version || "v1.0.0")}" placeholder="例如 v1.0.0"></div>
+              <div class="field full"><label for="datasetDescription">数据集说明</label><textarea id="datasetDescription" placeholder="说明数据集覆盖的业务范围、典型任务和适用 Agent">${escapeHtml(record?.description || (record ? `${record.scene}场景 Golden Dataset，用于${record.name}相关 Agent 的离线评测与回归。` : ""))}</textarea></div>
+            </div>
+          </div>
+
+          <div class="form-section full">
+            <div class="form-section-head"><div><h4>覆盖维度</h4><p>参考 60% 常见场景、20% 边缘场景、10% 对抗场景、10% 安全测试的分布。</p></div></div>
+            <div class="choice-grid">
+              ${coverageOptions.map(item => `<label class="choice-item"><input type="checkbox" name="coverage" value="${item}" ${selectedCoverage.has(item) ? "checked" : ""}><span class="choice-copy"><strong>${item}</strong><span>${item === "常见场景" ? "真实高频 Query" : item === "边界情况" ? "信息缺失、歧义与极限输入" : item === "对抗场景" ? "注入、诱导与复杂干扰" : item === "安全测试" ? "有害内容、隐私和越狱" : item === "多轮对话" ? "上下文冲突与记忆一致性" : item === "信息缺失" ? "不可回答与澄清能力" : "工具失败、重试与恢复"}</span></span></label>`).join("")}
+            </div>
+          </div>
+
+          <div class="form-section full">
+            <div class="form-section-head"><div><h4>质量与发布规则</h4><p>发布后生成不可变版本，历史评测任务固定读取该版本。</p></div></div>
+            <div class="form-section-grid">
+              <div class="field"><label for="datasetSource">用例来源</label><select id="datasetSource">${["真实用户采样", "线上 Bad Case", "专家设计", "合成数据 + 人工审核"].map(item => `<option ${record?.source === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <div class="field"><label for="datasetStatus">版本状态</label><select id="datasetStatus">${["草稿", "已发布", "已归档"].map(item => `<option ${(record?.status || "已发布") === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <div class="field full"><label for="datasetCriteria">统一成功标准</label><textarea id="datasetCriteria" placeholder="说明该数据集默认的业务成功条件、必须满足项与不可接受结果">${escapeHtml(record?.criteria || (record ? "答案需基于给定资料；关键事实不得编造；未提供信息时必须明确说明。" : ""))}</textarea></div>
+              <label class="toggle-row"><span>数据集发布前必须完成 Golden Review</span><input id="datasetGoldenReview" type="checkbox" ${record?.goldenReview !== false ? "checked" : ""}></label>
+              <label class="toggle-row"><span>含 PII 的用例必须完成脱敏检查</span><input id="datasetPiiCheck" type="checkbox" ${record?.piiCheck !== false ? "checked" : ""}></label>
+              <label class="toggle-row"><span>关键项用例需要双人标注，IAA ≥ 0.8</span><input id="datasetDoubleBlind" type="checkbox" ${record?.doubleBlind !== false ? "checked" : ""}></label>
+              <label class="toggle-row"><span>允许引用生产日志中的脱敏执行证据</span><input id="datasetEvidence" type="checkbox" ${record?.evidence ? "checked" : ""}></label>
+            </div>
+          </div>
+        </form>`;
+      const footer = `<button class="btn" type="button" data-action="close-modal">取消</button><button class="btn" type="button" data-action="save-dataset-draft">保存草稿</button><button class="btn primary" type="submit" form="datasetForm">${mode === "edit" ? "保存修改" : "创建数据集"}</button>`;
+      openModalMarkup(modalShell({ title: mode === "edit" ? "修改数据集" : "新建数据集", body, footer }));
+      setTimeout(() => document.getElementById("datasetName")?.focus(), 0);
+    }
+
+    function submitDataset(form) {
+      const name = form.querySelector("#datasetName").value.trim();
+      const scene = form.querySelector("#datasetScene").value;
+      const owner = form.querySelector("#datasetOwner").value;
+      const version = form.querySelector("#datasetVersion").value.trim();
+      if (!name || !scene || !owner || !version) return form.reportValidity();
+      const coverage = [...form.querySelectorAll('input[name="coverage"]:checked')].map(input => input.value);
+      if (!coverage.length) return toast("请至少选择一个覆盖维度");
+      const index = state.modal?.index ?? -1;
+      const previous = index >= 0 ? datasets[index] : null;
+      const item = {
+        name,
+        scene,
+        version,
+        count: previous?.count || 0,
+        coverage: coverage.join(" / "),
+        critical: previous?.critical || 0,
+        owner,
+        description: form.querySelector("#datasetDescription").value.trim(),
+        source: form.querySelector("#datasetSource").value,
+        status: form.querySelector("#datasetStatus").value,
+        criteria: form.querySelector("#datasetCriteria").value.trim(),
+        goldenReview: form.querySelector("#datasetGoldenReview").checked,
+        piiCheck: form.querySelector("#datasetPiiCheck").checked,
+        doubleBlind: form.querySelector("#datasetDoubleBlind").checked,
+        evidence: form.querySelector("#datasetEvidence").checked,
+        updated: "2026-10-16 15:10"
+      };
+      if (index >= 0) datasets[index] = item;
+      else datasets.unshift(item);
+      closeModal();
+      renderStaticTables();
+      navigate("datasets");
+      toast(index >= 0 ? "数据集修改已保存" : "数据集已创建");
+    }
+
+    function openCaseModal(mode = "create", index = -1) {
+      const record = index >= 0 ? cases[index] : null;
+      state.modal = { type: "case", mode, index };
+      const selectedScorers = new Set(record?.scorers || ["LLM 评分"]);
+      const datasetOptions = datasets.map(item => `${item.name} · ${item.scene}`);
+      const body = `
+        <form id="caseForm" class="form-grid">
+          <div class="form-section full">
+            <div class="form-section-head"><div><h4>用例目标</h4><p>每条用例必须说明自己在检验什么，以及什么结果算成功。</p></div>${record ? `<span class="badge blue">${escapeHtml(record.id)}</span>` : `<span class="badge gray">自动编号</span>`}</div>
+            <div class="form-section-grid">
+              <div class="field"><label class="required" for="caseDataset">归属数据集</label><select id="caseDataset" required><option value="">请选择</option>${datasetOptions.map(item => `<option ${record && (record.dataset === item || (!record.dataset && item.startsWith(record.scene))) ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}</select></div>
+              <div class="field"><label class="required" for="caseSource">用例来源</label><select id="caseSource" required>${["真实用户采样", "线上 Bad Case", "专家设计", "边界扩展", "安全红队"].map(item => `<option ${record?.source === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <div class="field full"><label class="required" for="caseTarget">检验目标</label><input id="caseTarget" required value="${escapeHtml(record?.target || "")}" placeholder="例如：资料缺失时 Agent 不应编造首次上线时间"></div>
+              <div class="field"><label for="caseDifficulty">难度</label><select id="caseDifficulty">${["普通", "困难", "边界", "对抗"].map(item => `<option ${record?.difficulty === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <div class="field"><label for="caseMultiTurn">输入形态</label><select id="caseMultiTurn">${["单轮请求", "多轮对话", "多工具任务"].map(item => `<option ${(record?.inputType || (record?.input.includes("多轮") ? "多轮对话" : "单轮请求")) === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+            </div>
+          </div>
+
+          <div class="form-section full">
+            <div class="form-section-head"><div><h4>执行输入</h4><p>只把任务、必要资料、工具权限和运行条件交给被测 Agent；参考答案不会提前暴露。</p></div></div>
+            <div class="form-section-grid">
+              <div class="field full"><label class="required" for="caseInput">用户问题 / 任务</label><textarea id="caseInput" required placeholder="请输入">${escapeHtml(record?.input || "")}</textarea></div>
+              <div class="field full"><label for="caseContext">补充资料 / 知识上下文</label><textarea id="caseContext" placeholder="粘贴知识库片段、业务数据或明确的资料缺口">${escapeHtml(record?.context || (record ? "仅提供与该任务相关的资料片段；如检验信息缺失，则有意保留信息缺口。" : ""))}</textarea></div>
+              <div class="field full"><label for="caseHistory">对话历史</label><textarea id="caseHistory" placeholder="多轮用例填写此前消息，例如：用户：...；助手：...">${escapeHtml(record?.history || (record && record.input.includes("多轮") ? "用户：我之前说门店在杭州。\n助手：已记录。\n用户：请按刚才的门店地址处理。" : ""))}</textarea></div>
+              <div class="field"><label for="caseTools">可用工具与权限</label><input id="caseTools" value="${escapeHtml(record?.tools || (record ? "知识库检索（只读）" : ""))}" placeholder="例如：query_order、create_ticket"></div>
+              <div class="field"><label for="caseEnvironment">环境与时间条件</label><input id="caseEnvironment" value="${escapeHtml(record?.environment || (record ? "2026-10-16，Asia/Shanghai，测试环境" : ""))}" placeholder="请输入"></div>
+            </div>
+          </div>
+
+          <div class="form-section full">
+            <div class="form-section-head"><div><h4>评分依据</h4><p>这组内容只进入评分环节，决定通过阈值和必须满足的关键要求。</p></div></div>
+            <div class="form-section-grid">
+              <div class="field full"><label class="required" for="caseReference">参考答案 / 成功事实</label><textarea id="caseReference" required placeholder="请输入">${escapeHtml(record?.reference || (record ? "回答应基于资料完成，不编造未提供的信息；关键字段必须与参考答案一致。" : ""))}</textarea></div>
+              <div class="field full"><label class="required" for="caseRubric">评分标准 Rubric</label><textarea id="caseRubric" required placeholder="说明每个评分维度的判断依据">${escapeHtml(record?.rubric || (record ? "事实准确性：核心事实不得错误；要点覆盖：列出要求覆盖的关键点；表达清晰：结论明确。" : ""))}</textarea></div>
+              <div class="field"><label for="caseRuleType">规则校验</label><select id="caseRuleType">${["无", "精确匹配", "包含匹配", "正则匹配", "JSON Schema"].map(item => `<option ${record?.ruleType === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <div class="field"><label for="caseRuleValue">规则参数</label><input id="caseRuleValue" value="${escapeHtml(record?.ruleValue || "")}" placeholder="例如：必填字段 name,status"></div>
+              <div class="field full"><label class="required">评分器组合</label><div class="choice-grid">${["LLM 评分", "过程指标", "过程评分", "规则评分", "人工复核"].map(item => `<label class="choice-item"><input type="checkbox" name="caseScorers" value="${item}" ${selectedScorers.has(item) ? "checked" : ""}><span class="choice-copy"><strong>${item}</strong><span>${item === "LLM 评分" ? "语义质量与事实准确性" : item === "过程指标" ? "调用次数、重复率与错误恢复" : item === "过程评分" ? "工具选择与步骤合理性" : item === "规则评分" ? "格式、字段和明确规则" : "业务负责人确认"}</span></span></label>`).join("")}</div></div>
+              <label class="toggle-row"><span>关键项：未通过时整个用例一票否决</span><input id="caseCritical" type="checkbox" ${record?.critical === "是" ? "checked" : ""}></label>
+              <label class="toggle-row"><span>评分失败后自动进入问题中心</span><input id="caseIssue" type="checkbox" ${record?.issue !== false ? "checked" : ""}></label>
+            </div>
+          </div>
+        </form>`;
+      const footer = `<button class="btn" type="button" data-action="close-modal">取消</button><button class="btn" type="button" data-action="save-case-draft">保存草稿</button><button class="btn primary" type="submit" form="caseForm">${mode === "edit" ? "保存修改" : "创建用例"}</button>`;
+      openModalMarkup(modalShell({ title: mode === "edit" ? "修改用例" : "新建用例", body, footer }));
+      setTimeout(() => document.getElementById("caseTarget")?.focus(), 0);
+    }
+
+    function submitCase(form) {
+      const datasetValue = form.querySelector("#caseDataset").value;
+      const target = form.querySelector("#caseTarget").value.trim();
+      const input = form.querySelector("#caseInput").value.trim();
+      const reference = form.querySelector("#caseReference").value.trim();
+      const rubric = form.querySelector("#caseRubric").value.trim();
+      if (!datasetValue || !target || !input || !reference || !rubric) return form.reportValidity();
+      const selectedScorers = [...form.querySelectorAll('input[name="caseScorers"]:checked')].map(input => input.value);
+      if (!selectedScorers.length) return toast("请至少选择一个评分器");
+      const index = state.modal?.index ?? -1;
+      const previous = index >= 0 ? cases[index] : null;
+      const item = {
+        id: previous?.id || `CASE-NEW-${String(cases.length + 1).padStart(3, "0")}`,
+        target,
+        input,
+        dataset: datasetValue,
+        scene: datasets.find(item => `${item.name} · ${item.scene}` === datasetValue)?.scene || "知识问答",
+        scorers: selectedScorers,
+        critical: form.querySelector("#caseCritical").checked ? "是" : "否",
+        difficulty: form.querySelector("#caseDifficulty").value,
+        source: form.querySelector("#caseSource").value,
+        inputType: form.querySelector("#caseMultiTurn").value,
+        context: form.querySelector("#caseContext").value.trim(),
+        history: form.querySelector("#caseHistory").value.trim(),
+        tools: form.querySelector("#caseTools").value.trim(),
+        environment: form.querySelector("#caseEnvironment").value.trim(),
+        reference,
+        rubric,
+        ruleType: form.querySelector("#caseRuleType").value,
+        ruleValue: form.querySelector("#caseRuleValue").value.trim(),
+        issue: form.querySelector("#caseIssue").checked,
+        updated: "2026-10-16 15:12"
+      };
+      if (index >= 0) cases[index] = item;
+      else cases.unshift(item);
+      closeModal();
+      renderStaticTables();
+      navigate("cases");
+      toast(index >= 0 ? "用例修改已保存" : "用例已创建");
+    }
+
+    function dimensionRow(name = "", description = "", weight = "30", minScore = "3.5", checked = true, removable = true) {
+      return `<div class="dimension-config-row"><input data-dim-field="name" value="${escapeHtml(name)}" placeholder="维度名称"><input data-dim-field="description" value="${escapeHtml(description)}" placeholder="检查什么"><input data-dim-field="weight" type="number" min="0" max="100" value="${escapeHtml(weight)}" placeholder="权重"><input data-dim-field="minScore" type="number" min="0" max="5" step="0.1" value="${escapeHtml(minScore)}" placeholder="最低分"><button class="icon-button" type="button" data-action="${removable ? "remove-scorer-dimension" : "noop"}" ${removable ? "" : "disabled"} aria-label="删除维度">${icon("x")}</button></div>`;
+    }
+
+    function openScorerModal(mode = "create", index = -1) {
+      const record = index >= 0 ? scorers[index] : null;
+      state.modal = { type: "scorer", mode, index };
+      const type = record?.type || "LLM 评分";
+      const dimensions = record ? [
+        ["事实准确性", "是否忠实于给定资料且无事实错误", "40", "4.0", true],
+        ["要点覆盖度", "是否覆盖参考答案中的关键点", "35", "3.5", false],
+        ["表达清晰度", "结构、语气和结论是否清晰", "25", "3.0", false]
+      ] : [
+        ["事实准确性", "是否忠实于给定资料且无事实错误", "40", "4.0", true],
+        ["要点覆盖度", "是否覆盖参考答案中的关键点", "35", "3.5", false],
+        ["表达清晰度", "结构、语气和结论是否清晰", "25", "3.0", false]
+      ];
+      const body = `
+        <form id="scorerForm" class="form-grid">
+          <div class="form-section full">
+            <div class="form-section-head"><div><h4>评分器基础配置</h4><p>评分器保存评分标准和计算规则；评测 Agent 提供模型与提示词配置。</p></div>${record ? `<span class="badge blue">当前版本 ${escapeHtml(record.version)}</span>` : `<span class="badge gray">新评分器</span>`}</div>
+            <div class="form-section-grid">
+              <div class="field"><label class="required" for="scorerName">名称</label><input id="scorerName" required value="${escapeHtml(record?.name || "")}" placeholder="请输入"></div>
+              <div class="field"><label class="required" for="scorerType">类型</label><select id="scorerType" required>${["LLM 评分", "过程指标", "过程评分", "人工复核", "规则评分"].map(item => `<option ${type === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <div class="field"><label class="required" for="scorerVersion">版本号</label><input id="scorerVersion" required value="${escapeHtml(record?.version || "v1.0")}" placeholder="例如 v1.0"></div>
+              <div class="field"><label for="scorerOwner">负责人</label><select id="scorerOwner"><option>张三</option><option>李四</option><option>王芳</option></select></div>
+              <div class="field full"><label for="scorerDescription">说明</label><textarea id="scorerDescription" placeholder="说明评分器适用场景和风险">${escapeHtml(record?.description || (record ? "用于检查最终回答或多步执行过程是否满足业务成功标准。" : ""))}</textarea></div>
+            </div>
+          </div>
+
+          <div class="form-section full scorer-type-panel" data-scorer-panel="llm">
+            <div class="form-section-head"><div><h4>LLM 评分 / 过程评分</h4><p>评分器与评测 Agent 各有职责，模型只负责对照标准作出判断。</p></div></div>
+            <div class="form-section-grid">
+              <div class="field"><label for="scorerJudgeModel">评测 Agent 模型</label><select id="scorerJudgeModel">${["强模型裁判（推荐）", "平衡模型降低成本", "与业务 Agent 相同模型"].map(item => `<option ${record?.judgeModel === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <div class="field"><label for="scorerAggregation">综合计算方式</label><select id="scorerAggregation">${["加权平均", "最低分优先", "加权平均 + 关键维度门槛"].map(item => `<option ${record?.aggregation === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <div class="field full"><label for="scorerPrompt">评分提示词</label><textarea id="scorerPrompt" placeholder="请输入评分标准、维度和输出格式约束">${escapeHtml(record?.prompt || (record ? "你是一名严格但客观的 AI 评测裁判。请根据问题、上下文、参考答案、实际回答和执行轨迹逐维度评分。必须给出理由，不得只给分数；无法判断时标记为需人工复核。" : ""))}</textarea></div>
+              <div class="field full">
+                <label>评分维度</label>
+                <div class="dimension-config-list" id="scorerDimensionList">
+                  <div class="dimension-config-row"><span>维度名称</span><span>检查内容</span><span>权重</span><span>最低分</span><span></span></div>
+                  ${dimensions.map(dimension => dimensionRow(...dimension)).join("")}
+                </div>
+                <div class="compact-actions" style="margin-top:8px"><button class="btn small" type="button" data-action="add-scorer-dimension"><svg><use href="#i-plus"></use></svg>添加维度</button><span class="field-note">关键维度最低分未达到时，即使加权得分较高也不通过。</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section full scorer-type-panel" data-scorer-panel="process">
+            <div class="form-section-head"><div><h4>过程指标</h4><p>由代码统计运行记录，并与配置阈值比较。</p></div></div>
+            <div class="form-section-grid">
+              <div class="field"><label for="processMetric">统计指标</label><select id="processMetric">${["工具调用次数", "重复调用率", "空转轮次", "无效步骤数", "错误恢复率", "总耗时", "Token 总量"].map(item => `<option ${record?.processMetric === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <div class="field"><label for="processOperator">判断方式</label><select id="processOperator">${["小于等于", "大于等于", "等于", "不能出现"].map(item => `<option ${record?.processOperator === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <div class="field"><label for="processThreshold">阈值</label><input id="processThreshold" value="${escapeHtml(record?.processThreshold || "3")}" placeholder="请输入"></div>
+              <div class="field"><label for="processScope">统计范围</label><select id="processScope">${["单次执行全部轨迹", "仅主 Agent 步骤", "包含评分器 Run"].map(item => `<option ${record?.processScope === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+            </div>
+          </div>
+
+          <div class="form-section full scorer-type-panel" data-scorer-panel="human">
+            <div class="form-section-head"><div><h4>人工复核</h4><p>用于业务判断复杂、模型分歧或高风险确认场景。</p></div></div>
+            <div class="form-section-grid">
+              <div class="field"><label for="humanRole">复核角色</label><select id="humanRole">${["业务负责人", "评测负责人", "法务 / 安全", "双人复核"].map(item => `<option ${record?.humanRole === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <div class="field"><label for="humanSla">超时与升级</label><select id="humanSla">${["24 小时未处理自动升级", "48 小时未处理自动升级", "不自动升级"].map(item => `<option ${record?.humanSla === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <label class="toggle-row"><span>必须双人独立提交，意见不一致时仲裁</span><input id="humanDouble" type="checkbox" ${record?.humanDouble !== false ? "checked" : ""}></label>
+              <label class="toggle-row"><span>人工提交后覆盖自动评分的最终通过状态</span><input id="humanOverride" type="checkbox" ${record?.humanOverride !== false ? "checked" : ""}></label>
+            </div>
+          </div>
+
+          <div class="form-section full scorer-type-panel" data-scorer-panel="rule">
+            <div class="form-section-head"><div><h4>规则评分</h4><p>明确格式和字段要求优先交给代码规则，减少模型误判。</p></div></div>
+            <div class="form-section-grid">
+              <div class="field"><label for="ruleMethod">规则类型</label><select id="ruleMethod">${["精确匹配", "包含匹配", "正则匹配", "JSON Schema"].map(item => `<option ${record?.ruleMethod === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <div class="field"><label for="ruleExpected">期望值 / 表达式</label><input id="ruleExpected" value="${escapeHtml(record?.ruleExpected || "")}" placeholder="请输入"></div>
+              <div class="field full"><label for="ruleDetail">规则配置</label><textarea id="ruleDetail" placeholder="说明必填字段、类型、取值约束或安全模式">${escapeHtml(record?.ruleDetail || (record ? "输出必须可解析；必填字段不得缺失；字段值不得越权。" : ""))}</textarea></div>
+            </div>
+          </div>
+
+          <div class="form-section full">
+            <div class="form-section-head"><div><h4>通过策略</h4><p>多个评分器可设置权重；关键项未通过时一票否决。</p></div></div>
+            <div class="form-section-grid">
+              <div class="field"><label for="scorerThreshold">综合通过阈值</label><input id="scorerThreshold" value="${escapeHtml(record?.threshold || "≥4.0")}" placeholder="例如 ≥4.0"></div>
+              <div class="field"><label for="scorerVeto">一票否决</label><select id="scorerVeto">${["是，关键维度未通过即不通过", "否，仅参与加权得分"].map(item => `<option ${record?.veto === item ? "selected" : ""}>${item}</option>`).join("")}</select></div>
+              <label class="toggle-row"><span>评分结果必须保存理由、版本和裁判 Run</span><input id="scorerTrace" type="checkbox" ${record?.trace !== false ? "checked" : ""}></label>
+              <label class="toggle-row"><span>评分失败或模型分歧自动进入人工复核</span><input id="scorerHumanFallback" type="checkbox" ${record?.humanFallback !== false ? "checked" : ""}></label>
+            </div>
+          </div>
+        </form>`;
+      const footer = `<button class="btn" type="button" data-action="close-modal">取消</button><button class="btn" type="button" data-action="save-scorer-draft">保存草稿</button><button class="btn primary" type="submit" form="scorerForm">${mode === "edit" ? "保存修改" : "创建评分器"}</button>`;
+      openModalMarkup(modalShell({ title: mode === "edit" ? "修改评分器" : "新建评分器", body, footer }));
+      updateScorerTypePanels(type);
+      setTimeout(() => document.getElementById("scorerName")?.focus(), 0);
+    }
+
+    function updateScorerTypePanels(type) {
+      document.querySelectorAll(".scorer-type-panel").forEach(panel => {
+        const kinds = panel.dataset.scorerPanel;
+        const visible = (kinds === "llm" && ["LLM 评分", "过程评分"].includes(type)) || (kinds === "process" && type === "过程指标") || (kinds === "human" && type === "人工复核") || (kinds === "rule" && type === "规则评分");
+        panel.style.display = visible ? "" : "none";
+      });
+    }
+
+    function submitScorer(form) {
+      const name = form.querySelector("#scorerName").value.trim();
+      const type = form.querySelector("#scorerType").value;
+      const version = form.querySelector("#scorerVersion").value.trim();
+      const threshold = form.querySelector("#scorerThreshold").value.trim();
+      if (!name || !type || !version || !threshold) return form.reportValidity();
+      const dimensions = [...form.querySelectorAll("#scorerDimensionList .dimension-config-row")].slice(1).map(row => row.querySelector('[data-dim-field="name"]')?.value.trim()).filter(Boolean);
+      const index = state.modal?.index ?? -1;
+      const previous = index >= 0 ? scorers[index] : null;
+      const item = {
+        name,
+        type,
+        version,
+        dimensions: dimensions.length ? dimensions.join(" / ") : ({ "过程指标": "工具调用 / 重复率 / 错误恢复", "人工复核": "业务正确性 / 风险等级", "规则评分": "格式 / 字段 / 取值约束" }[type] || "评分维度"),
+        threshold,
+        cases: previous?.cases || 0,
+        description: form.querySelector("#scorerDescription").value.trim(),
+        judgeModel: form.querySelector("#scorerJudgeModel").value,
+        aggregation: form.querySelector("#scorerAggregation").value,
+        prompt: form.querySelector("#scorerPrompt").value.trim(),
+        processMetric: form.querySelector("#processMetric").value,
+        processOperator: form.querySelector("#processOperator").value,
+        processThreshold: form.querySelector("#processThreshold").value.trim(),
+        processScope: form.querySelector("#processScope").value,
+        humanRole: form.querySelector("#humanRole").value,
+        humanSla: form.querySelector("#humanSla").value,
+        humanDouble: form.querySelector("#humanDouble").checked,
+        humanOverride: form.querySelector("#humanOverride").checked,
+        ruleMethod: form.querySelector("#ruleMethod").value,
+        ruleExpected: form.querySelector("#ruleExpected").value.trim(),
+        ruleDetail: form.querySelector("#ruleDetail").value.trim(),
+        veto: form.querySelector("#scorerVeto").value,
+        trace: form.querySelector("#scorerTrace").checked,
+        humanFallback: form.querySelector("#scorerHumanFallback").checked,
+        updated: "2026-10-16 15:14"
+      };
+      if (index >= 0) scorers[index] = item;
+      else scorers.unshift(item);
+      closeModal();
+      renderStaticTables();
+      navigate("scorers");
+      toast(index >= 0 ? "评分器修改已保存" : "评分器已创建");
     }
 
     function openEvaluationModal() {
@@ -1047,13 +1394,26 @@
         toast("筛选完成");
       }
       if (action === "resolve-issue") toast(actionTarget.textContent.trim() === "处理" ? "问题已进入处理队列" : "已打开问题详情");
-      if (action === "view-dataset" || action === "view-case" || action === "view-scorer" || action === "view-gate" || action === "view-agent") toast("详情面板已准备，可在正式版中接入");
+      if (action === "new-dataset") openDatasetModal();
+      if (action === "edit-dataset") openDatasetModal("edit", Number(actionTarget.dataset.index));
+      if (action === "new-case") openCaseModal();
+      if (action === "edit-case") openCaseModal("edit", Number(actionTarget.dataset.index));
+      if (action === "new-scorer") openScorerModal();
+      if (action === "edit-scorer") openScorerModal("edit", Number(actionTarget.dataset.index));
+      if (action === "save-dataset-draft") document.getElementById("datasetForm")?.requestSubmit();
+      if (action === "save-case-draft") document.getElementById("caseForm")?.requestSubmit();
+      if (action === "save-scorer-draft") document.getElementById("scorerForm")?.requestSubmit();
+      if (action === "add-scorer-dimension") document.getElementById("scorerDimensionList")?.insertAdjacentHTML("beforeend", dimensionRow("", "", "20", "3.0"));
+      if (action === "remove-scorer-dimension") actionTarget.closest(".dimension-config-row")?.remove();
+      if (action === "noop") return;
+      if (action === "view-gate" || action === "view-agent") toast("详情面板已准备，可在正式版中接入");
       if (action === "publish-dataset") toast("已生成新的数据集版本草稿");
       if (action === "retry-case") toast("已发起单用例重试");
-      if (action === "new-dataset" || action === "new-case" || action === "new-scorer" || action === "new-agent") toast("已打开新建流程");
+      if (action === "new-agent") toast("已打开新建流程");
       if (action === "import") toast("已打开批量导入");
       if (action === "bulk-close") toast("已批量标记为已解决");
       if (action === "gate-policy" || action === "scorer-doc") toast("已打开配置说明");
+      if (action === "copy-scorer") toast("已复制评分器配置");
     });
 
     document.addEventListener("input", event => {
@@ -1069,12 +1429,25 @@
         state.taskFilters[key] = event.target.value;
         renderTaskTables();
       }
+      if (event.target.id === "scorerType") updateScorerTypePanels(event.target.value);
     });
 
     document.addEventListener("submit", event => {
       if (event.target.id === "evaluationForm") {
         event.preventDefault();
         submitEvaluation(event.target);
+      }
+      if (event.target.id === "datasetForm") {
+        event.preventDefault();
+        submitDataset(event.target);
+      }
+      if (event.target.id === "caseForm") {
+        event.preventDefault();
+        submitCase(event.target);
+      }
+      if (event.target.id === "scorerForm") {
+        event.preventDefault();
+        submitScorer(event.target);
       }
     });
 
