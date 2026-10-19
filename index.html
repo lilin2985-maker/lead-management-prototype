@@ -3405,6 +3405,13 @@
                   <input id="roleNameFilter" type="text" data-role-filter="name" placeholder="请输入角色名称">
                 </div>
               </div>
+              <div class="field">
+                <label for="roleMemberFilter">成员姓名</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="roleMemberFilter" type="text" data-role-filter="member" placeholder="请输入成员姓名">
+                </div>
+              </div>
               <div class="filter-actions">
                 <button class="btn" type="button" data-action="reset-role-filter">重置</button>
                 <button class="btn primary" type="submit">
@@ -4354,6 +4361,7 @@
       followMenu: null,
       modal: null,
       roleFilter: "",
+      roleMemberFilter: "",
       columnPanelScope: null,
       regionPickerScope: null,
       visibleColumns: {
@@ -5069,8 +5077,10 @@
 
     function renderRoles() {
       const keyword = state.roleFilter.trim().toLowerCase();
+      const memberKeyword = state.roleMemberFilter.trim().toLowerCase();
       const rows = [...roles]
         .filter(role => !keyword || role.name.toLowerCase().includes(keyword))
+        .filter(role => !memberKeyword || (role.members || []).some(name => name.toLowerCase().includes(memberKeyword)))
         .sort((left, right) => Number(left.sort) - Number(right.sort));
       const body = document.getElementById("roleBody");
       if (!body) return;
@@ -6738,8 +6748,11 @@
       }
       if (action === "reset-role-filter") {
         state.roleFilter = "";
-        const input = document.getElementById("roleNameFilter");
-        if (input) input.value = "";
+        state.roleMemberFilter = "";
+        const nameInput = document.getElementById("roleNameFilter");
+        const memberInput = document.getElementById("roleMemberFilter");
+        if (nameInput) nameInput.value = "";
+        if (memberInput) memberInput.value = "";
         renderRoles();
         toast("角色筛选已重置");
       }
@@ -7047,6 +7060,11 @@
         renderRoles();
       }
 
+      if (event.target.dataset.roleFilter === "member") {
+        state.roleMemberFilter = event.target.value;
+        renderRoles();
+      }
+
       if (event.target.matches("#followContent")) {
         const count = event.target.value.length;
         const counter = document.getElementById("followCounter");
@@ -7094,7 +7112,11 @@
       if (event.target.id === "roleFilterForm") {
         renderRoles();
         const keyword = state.roleFilter.trim().toLowerCase();
-        const roleCount = roles.filter(role => !keyword || role.name.toLowerCase().includes(keyword)).length;
+        const memberKeyword = state.roleMemberFilter.trim().toLowerCase();
+        const roleCount = roles
+          .filter(role => !keyword || role.name.toLowerCase().includes(keyword))
+          .filter(role => !memberKeyword || (role.members || []).some(name => name.toLowerCase().includes(memberKeyword)))
+          .length;
         toast(`查询完成，共 ${roleCount} 个角色`);
         return;
       }
