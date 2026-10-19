@@ -2490,6 +2490,109 @@
       min-height: 38px;
     }
 
+    .role-form-stack {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .role-choice-group {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      min-height: 38px;
+      flex-wrap: wrap;
+    }
+
+    .role-choice {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--ink-2);
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .role-choice input {
+      width: 15px;
+      height: 15px;
+      min-height: 0;
+      margin: 0;
+      accent-color: var(--brand);
+    }
+
+    .role-switch-field {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 7px 10px;
+      background: #fafbfc;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    .role-switch-copy strong {
+      display: block;
+      color: var(--ink-2);
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .role-switch-copy span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .switch-control {
+      position: relative;
+      width: 38px;
+      height: 22px;
+      flex: none;
+      display: inline-block;
+      cursor: pointer;
+    }
+
+    .switch-control input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      min-height: 0;
+      opacity: 0;
+    }
+
+    .switch-track {
+      position: absolute;
+      inset: 0;
+      background: #d0d5dd;
+      border-radius: 999px;
+      transition: background .16s ease;
+    }
+
+    .switch-track::after {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, .18);
+      content: "";
+      transition: transform .16s ease;
+    }
+
+    .switch-control input:checked + .switch-track {
+      background: var(--brand);
+    }
+
+    .switch-control input:checked + .switch-track::after {
+      transform: translateX(16px);
+    }
+
     .role-member-chip,
     .role-primary-chip {
       display: inline-flex;
@@ -3426,6 +3529,10 @@
             <div class="table-toolbar">
               <div class="selection-summary">角色列表 <strong id="roleTotalCount">0</strong> 条</div>
               <div class="table-actions">
+                <button class="btn small" type="button" data-action="inherit-personnel">
+                  <svg><use href="#i-users"></use></svg>
+                  人员继承
+                </button>
                 <button class="btn small primary" type="button" data-action="new-role">
                   <svg><use href="#i-plus"></use></svg>
                   新增角色
@@ -4139,7 +4246,7 @@
         name: "主责电销",
         members: ["张三", "李四"],
         description: "负责新线索首次联系、需求确认和商机转化",
-        selectionMode: "轮询分配",
+        selectionMode: "单选",
         isPrimary: true,
         createdAt: "2026-09-18 10:20:00",
         updatedAt: "2026-10-18 16:40:00"
@@ -4150,7 +4257,7 @@
         name: "区域电销",
         members: ["王芳", "陈晨"],
         description: "按商家所在区域承接线索并持续跟进",
-        selectionMode: "按区域分配",
+        selectionMode: "多选",
         isPrimary: false,
         createdAt: "2026-09-22 14:10:00",
         updatedAt: "2026-10-17 09:25:00"
@@ -4161,7 +4268,7 @@
         name: "协同跟单",
         members: ["李四"],
         description: "承接重点商户的协同跟进和商机推进",
-        selectionMode: "手动选择",
+        selectionMode: "单选",
         isPrimary: false,
         createdAt: "2026-10-02 11:35:00",
         updatedAt: "2026-10-16 18:05:00"
@@ -5217,7 +5324,7 @@
           sort: role?.sort || 1,
           members: [...(role?.members || [])],
           description: role?.description || "",
-          selectionMode: role?.selectionMode || "轮询分配",
+          selectionMode: role?.selectionMode || "单选",
           isPrimary: Boolean(role?.isPrimary)
         }
       };
@@ -5229,8 +5336,8 @@
       const draft = state.modal.draft;
       draft.name = document.getElementById("roleFormName")?.value.trim() || "";
       draft.sort = Number(document.getElementById("roleFormSort")?.value) || 1;
-      draft.selectionMode = document.getElementById("roleFormSelectionMode")?.value || "轮询分配";
-      draft.isPrimary = document.getElementById("roleFormPrimary")?.value === "是";
+      draft.selectionMode = document.querySelector('input[name="roleSelectionMode"]:checked')?.value || "单选";
+      draft.isPrimary = Boolean(document.getElementById("roleFormPrimary")?.checked);
       draft.description = document.getElementById("roleFormDescription")?.value.trim() || "";
     }
 
@@ -5267,7 +5374,7 @@
         title: mode === "edit" ? "编辑角色" : "新增角色",
         size: "wide",
         body: `
-          <form id="roleForm" class="form-grid">
+          <form id="roleForm" class="role-form-stack">
             <div class="field role-basic-field">
               <label class="required" for="roleFormName">角色名称</label>
               <input id="roleFormName" type="text" required value="${escapeHtml(draft.name)}" placeholder="请输入">
@@ -5277,12 +5384,20 @@
               <input id="roleFormSort" type="number" min="1" step="1" value="${Number(draft.sort)}" placeholder="请输入">
             </div>
             <div class="field role-basic-field">
-              <label for="roleFormSelectionMode">选择方式</label>
-              <select id="roleFormSelectionMode">${["轮询分配", "按区域分配", "手动选择", "指定负责人"].map(item => `<option ${draft.selectionMode === item ? "selected" : ""}>${item}</option>`).join("")}</select>
+              <label>选择方式</label>
+              <div class="role-choice-group">
+                ${["单选", "多选"].map(item => `<label class="role-choice"><input type="radio" name="roleSelectionMode" value="${item}" ${draft.selectionMode === item ? "checked" : ""}>${item}</label>`).join("")}
+              </div>
             </div>
             <div class="field role-basic-field">
-              <label for="roleFormPrimary">是否主键</label>
-              <select id="roleFormPrimary"><option value="否" ${!draft.isPrimary ? "selected" : ""}>否</option><option value="是" ${draft.isPrimary ? "selected" : ""}>是</option></select>
+              <label>是否主键</label>
+              <div class="role-switch-field">
+                <div class="role-switch-copy"><strong>${draft.isPrimary ? "已启用主键" : "未启用主键"}</strong><span>启用后作为当前角色的主键配置</span></div>
+                <label class="switch-control" aria-label="是否主键">
+                  <input id="roleFormPrimary" type="checkbox" ${draft.isPrimary ? "checked" : ""}>
+                  <span class="switch-track"></span>
+                </label>
+              </div>
             </div>
             <div class="field full">
               <label for="roleFormDescription">角色说明</label>
@@ -5351,6 +5466,58 @@
       });
     }
 
+    function renderInheritanceModal(root) {
+      const peopleOptions = salesPeople.map(person => `<option value="${escapeHtml(person.name)}">${escapeHtml(person.name)} · ${escapeHtml(person.team)}</option>`).join("");
+      root.innerHTML = modalShell({
+        title: "人员继承",
+        size: "wide",
+        body: `
+          <form id="roleInheritanceForm" class="role-form-stack">
+            <div class="field role-basic-field">
+              <label class="required" for="inheritedPerson">被继承人</label>
+              <select id="inheritedPerson" required><option value="">请选择被继承人</option>${peopleOptions}</select>
+            </div>
+            <div class="field role-basic-field">
+              <label class="required" for="inheritor">继承人</label>
+              <select id="inheritor" required><option value="">请选择继承人</option>${peopleOptions}</select>
+            </div>
+            <div class="field-note">将被继承人在所有代运营角色中的槽位、人员分配与业务数据合并到继承人；同角色已有槽位时合并，否则接管来源槽位</div>
+          </form>`,
+        footer: `<button class="btn" type="button" data-action="close-modal">取消</button><button class="btn primary" type="submit" form="roleInheritanceForm">确认继承</button>`
+      });
+    }
+
+    function submitRoleInheritance(form) {
+      const inheritedPerson = document.getElementById("inheritedPerson")?.value || "";
+      const inheritor = document.getElementById("inheritor")?.value || "";
+      if (!inheritedPerson || !inheritor) {
+        form.reportValidity();
+        return;
+      }
+      if (inheritedPerson === inheritor) {
+        toast("被继承人和继承人不能为同一人");
+        return;
+      }
+      roles.forEach(role => {
+        if (role.members.includes(inheritedPerson)) {
+          role.members = [...new Set(role.members.filter(name => name !== inheritedPerson).concat(inheritor))];
+          role.updatedAt = "2026-10-19 16:30:00";
+        }
+      });
+      leads.forEach(lead => {
+        if (lead.sales === inheritedPerson) lead.sales = inheritor;
+      });
+      opportunities.forEach(opportunity => {
+        if (opportunity.sales === inheritedPerson) opportunity.sales = inheritor;
+        if (opportunity.assignedBy === inheritedPerson) opportunity.assignedBy = inheritor;
+        if (opportunity.creator === inheritedPerson) opportunity.creator = inheritor;
+      });
+      closeModal();
+      renderAll();
+      navigate("roleConfig");
+      toast(`已将【${inheritedPerson}】的角色和业务数据合并至【${inheritor}】`);
+    }
+
     function renderModal() {
       const root = document.getElementById("modalRoot");
       if (!state.modal) {
@@ -5369,6 +5536,11 @@
 
       if (type === "delete-role") {
         renderDeleteRoleModal(root);
+        return;
+      }
+
+      if (type === "inherit-personnel") {
+        renderInheritanceModal(root);
         return;
       }
 
@@ -6719,6 +6891,7 @@
         document.getElementById("sidebar").classList.remove("open");
         document.getElementById("mobileScrim").classList.remove("open");
       }
+      if (action === "inherit-personnel") openModal("inherit-personnel");
       if (action === "new-role") openRoleModal();
       if (action === "edit-role") openRoleModal("edit", actionTarget.dataset.id);
       if (action === "delete-role") openModal("delete-role", { id: actionTarget.dataset.id });
@@ -7014,6 +7187,11 @@
         }
       }
 
+      if (event.target.id === "roleFormPrimary") {
+        const label = event.target.closest(".role-switch-field")?.querySelector(".role-switch-copy strong");
+        if (label) label.textContent = event.target.checked ? "已启用主键" : "未启用主键";
+      }
+
       if (event.target.dataset.action === "follow-type-select") {
         state.modal.followType = event.target.value;
         const fields = document.getElementById("followConvertFields");
@@ -7122,6 +7300,10 @@
       }
       if (event.target.id === "roleForm") {
         submitRoleForm(event.target);
+        return;
+      }
+      if (event.target.id === "roleInheritanceForm") {
+        submitRoleInheritance(event.target);
         return;
       }
       const scope = event.target.dataset.filterForm;
