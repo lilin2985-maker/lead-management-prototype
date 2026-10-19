@@ -2484,6 +2484,12 @@
       flex-wrap: wrap;
     }
 
+    .role-basic-field input,
+    .role-basic-field select {
+      height: 38px;
+      min-height: 38px;
+    }
+
     .role-member-chip,
     .role-primary-chip {
       display: inline-flex;
@@ -2562,58 +2568,6 @@
       justify-content: flex-start;
       margin-top: 9px;
     }
-
-    .member-picker {
-      margin-top: 9px;
-      padding: 11px;
-      background: #fff;
-      border: 1px solid #b9c9f1;
-      border-radius: 7px;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .member-picker-search {
-      position: relative;
-      margin-bottom: 8px;
-    }
-
-    .member-picker-search svg {
-      position: absolute;
-      top: 50%;
-      left: 9px;
-      width: 14px;
-      height: 14px;
-      color: var(--muted-2);
-      transform: translateY(-50%);
-    }
-
-    .member-picker-search input { padding-left: 30px; }
-
-    .member-picker-list {
-      max-height: 210px;
-      display: grid;
-      gap: 5px;
-      overflow-y: auto;
-    }
-
-    .member-picker-option {
-      min-height: 38px;
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      padding: 7px 9px;
-      background: #fafbfc;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .member-picker-option:hover { border-color: #b9c9f1; background: #f6f9ff; }
-    .member-picker-option input { width: 15px; min-height: 0; margin: 0; accent-color: var(--brand); }
-    .member-picker-copy { min-width: 0; flex: 1; }
-    .member-picker-copy strong { display: block; color: var(--ink-2); font-size: 10px; }
-    .member-picker-copy span { display: block; color: var(--muted); font-size: 9px; }
-    .member-picker-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 9px; }
 
     .required::before {
       margin-right: 4px;
@@ -5247,9 +5201,7 @@
         type: "role",
         mode,
         id,
-        memberPickerOpen: false,
-        candidateSelection: new Set(),
-        memberSearch: "",
+        pendingMemberOpen: false,
         draft: {
           name: role?.name || "",
           sort: role?.sort || 1,
@@ -5272,9 +5224,8 @@
       draft.description = document.getElementById("roleFormDescription")?.value.trim() || "";
     }
 
-    function roleMemberRowsHtml(members) {
-      if (!members.length) return `<div class="role-member-empty">暂未添加角色成员</div>`;
-      return members.map(name => {
+    function roleMemberRowsHtml(members, pendingMemberOpen = false) {
+      const selectedRows = members.map(name => {
         const metrics = getRoleMemberMetrics(name);
         return `
           <div class="role-member-row">
@@ -5285,48 +5236,41 @@
             <span class="member-actions"><button class="link-button" type="button" data-action="remove-role-member" data-name="${escapeHtml(name)}">删除</button></span>
           </div>`;
       }).join("");
+      const availablePeople = salesPeople.filter(person => !members.includes(person.name));
+      const pendingRow = pendingMemberOpen ? `
+        <div class="role-member-row">
+          <select data-action="select-role-member" aria-label="选择角色成员">
+            <option value="">请选择人员</option>
+            ${availablePeople.map(person => `<option value="${escapeHtml(person.name)}">${escapeHtml(person.name)} · ${escapeHtml(person.team)}</option>`).join("")}
+          </select>
+          <span class="merchant-meta">待选择</span>
+          <span class="number">--</span>
+          <span class="number">--</span>
+          <span class="member-actions"><button class="link-button" type="button" data-action="cancel-pending-role-member">取消</button></span>
+        </div>` : "";
+      return selectedRows || pendingRow ? `${selectedRows}${pendingRow}` : `<div class="role-member-empty">暂未添加角色成员</div>`;
     }
 
     function renderRoleModal(root) {
-      const { mode, draft, memberPickerOpen, candidateSelection, memberSearch } = state.modal;
-      const availablePeople = salesPeople.filter(person => !draft.members.includes(person.name));
-      const pickerHtml = memberPickerOpen ? `
-        <div class="member-picker" id="roleMemberPicker">
-          <div class="member-picker-search">
-            <svg><use href="#i-search"></use></svg>
-            <input type="text" data-action="role-member-search" value="${escapeHtml(memberSearch || "")}" placeholder="搜索姓名、区域或团队">
-          </div>
-          <div class="member-picker-list">
-            ${availablePeople.length ? availablePeople.map(person => `
-              <label class="member-picker-option" data-role-member-search="${escapeHtml(`${person.name} ${person.region} ${person.team}`)}">
-                <input type="checkbox" value="${escapeHtml(person.name)}" ${candidateSelection.has(person.name) ? "checked" : ""}>
-                <span class="member-picker-copy"><strong>${escapeHtml(person.name)}</strong><span>${escapeHtml(person.region)} · ${escapeHtml(person.team)} · ${escapeHtml(person.load)}</span></span>
-              </label>`).join("") : `<div class="role-member-empty">全部人员已添加</div>`}
-          </div>
-          <div class="member-picker-actions">
-            <button class="btn small" type="button" data-action="cancel-role-member-picker">取消</button>
-            <button class="btn small primary" type="button" data-action="confirm-role-member-picker">确定添加</button>
-          </div>
-        </div>` : "";
+      const { mode, draft, pendingMemberOpen } = state.modal;
       root.innerHTML = modalShell({
         title: mode === "edit" ? "编辑角色" : "新增角色",
         size: "wide",
         body: `
           <form id="roleForm" class="form-grid">
-            <div class="field">
+            <div class="field role-basic-field">
               <label class="required" for="roleFormName">角色名称</label>
-              <input id="roleFormName" required value="${escapeHtml(draft.name)}" placeholder="请输入角色名称">
+              <input id="roleFormName" type="text" required value="${escapeHtml(draft.name)}" placeholder="请输入">
             </div>
-            <div class="field">
-              <label for="roleFormSort">排序</label>
+            <div class="field role-basic-field">
+              <label for="roleFormSort">排序（数值越小越靠前）</label>
               <input id="roleFormSort" type="number" min="1" step="1" value="${Number(draft.sort)}" placeholder="请输入">
-              <div class="field-note">数值越小越靠前，默认为 1</div>
             </div>
-            <div class="field">
+            <div class="field role-basic-field">
               <label for="roleFormSelectionMode">选择方式</label>
               <select id="roleFormSelectionMode">${["轮询分配", "按区域分配", "手动选择", "指定负责人"].map(item => `<option ${draft.selectionMode === item ? "selected" : ""}>${item}</option>`).join("")}</select>
             </div>
-            <div class="field">
+            <div class="field role-basic-field">
               <label for="roleFormPrimary">是否主键</label>
               <select id="roleFormPrimary"><option value="否" ${!draft.isPrimary ? "selected" : ""}>否</option><option value="是" ${draft.isPrimary ? "selected" : ""}>是</option></select>
             </div>
@@ -5339,20 +5283,17 @@
               <div class="role-member-editor">
                 <div class="role-member-table">
                   <div class="role-member-row head"><span>成员</span><span>状态</span><span style="text-align:right">线索数量</span><span style="text-align:right">商机数量</span><span style="text-align:right">操作</span></div>
-                  ${roleMemberRowsHtml(draft.members)}
+                  ${roleMemberRowsHtml(draft.members, pendingMemberOpen)}
                 </div>
                 <div class="role-member-footer">
                   <button class="btn small" type="button" data-action="add-role-member"><svg><use href="#i-plus"></use></svg>添加成员</button>
                 </div>
-                ${pickerHtml}
               </div>
             </div>
           </form>`,
         footer: `<button class="btn" type="button" data-action="close-modal">取消</button><button class="btn primary" type="submit" form="roleForm">${mode === "edit" ? "保存修改" : "确认新增"}</button>`
       });
-      if (memberPickerOpen) {
-        setTimeout(() => document.querySelector('[data-action="role-member-search"]')?.focus(), 0);
-      }
+      if (pendingMemberOpen) setTimeout(() => document.querySelector('[data-action="select-role-member"]')?.focus(), 0);
     }
 
     function submitRoleForm(form) {
@@ -6782,26 +6723,13 @@
       }
       if (action === "add-role-member") {
         syncRoleDraftFromForm();
-        state.modal.memberPickerOpen = true;
-        state.modal.candidateSelection = new Set();
-        state.modal.memberSearch = "";
+        state.modal.pendingMemberOpen = true;
         renderModal();
       }
-      if (action === "cancel-role-member-picker") {
+      if (action === "cancel-pending-role-member") {
         syncRoleDraftFromForm();
-        state.modal.memberPickerOpen = false;
+        state.modal.pendingMemberOpen = false;
         renderModal();
-      }
-      if (action === "confirm-role-member-picker") {
-        syncRoleDraftFromForm();
-        const selected = [...document.querySelectorAll("#roleMemberPicker input[type=checkbox]:checked")].map(input => input.value);
-        if (!selected.length) {
-          toast("请选择需要添加的成员");
-        } else {
-          state.modal.draft.members = [...new Set([...state.modal.draft.members, ...selected])];
-          state.modal.memberPickerOpen = false;
-          renderModal();
-        }
       }
       if (action === "remove-role-member") {
         syncRoleDraftFromForm();
@@ -7063,6 +6991,16 @@
         state.modal.sources = new FormData(document.getElementById("newLeadForm")).getAll("sources").map(String);
       }
 
+      if (event.target.dataset.action === "select-role-member") {
+        syncRoleDraftFromForm();
+        const memberName = event.target.value;
+        if (memberName) {
+          state.modal.draft.members = [...new Set([...state.modal.draft.members, memberName])];
+          state.modal.pendingMemberOpen = false;
+          renderModal();
+        }
+      }
+
       if (event.target.dataset.action === "follow-type-select") {
         state.modal.followType = event.target.value;
         const fields = document.getElementById("followConvertFields");
@@ -7107,14 +7045,6 @@
       if (event.target.dataset.roleFilter === "name") {
         state.roleFilter = event.target.value;
         renderRoles();
-      }
-
-      if (event.target.dataset.action === "role-member-search") {
-        const keyword = event.target.value.trim().toLowerCase();
-        state.modal.memberSearch = event.target.value;
-        document.querySelectorAll("[data-role-member-search]").forEach(option => {
-          option.style.display = option.dataset.roleMemberSearch.toLowerCase().includes(keyword) ? "" : "none";
-        });
       }
 
       if (event.target.matches("#followContent")) {
