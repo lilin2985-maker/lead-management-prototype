@@ -2846,7 +2846,7 @@
           <div class="nav-label">线索运营</div>
           <button class="nav-item open" id="lineNav" type="button" data-action="toggle-nav">
             <svg><use href="#i-target"></use></svg>
-            <span>线索管理</span>
+            <span>代运营线索管理</span>
             <svg class="nav-chevron"><use href="#i-chevron-down"></use></svg>
           </button>
           <div class="nav-children open" id="lineChildren">
@@ -2901,7 +2901,7 @@
             <svg><use href="#i-menu"></use></svg>
           </button>
           <div class="breadcrumbs">
-            <span>线索管理</span>
+            <span>代运营线索管理</span>
             <svg><use href="#i-chevron-right"></use></svg>
             <strong id="breadcrumbCurrent">线索公海</strong>
           </div>
@@ -3085,16 +3085,19 @@
             </div>
           </div>
 
-          <div class="list-tabs" aria-label="我的线索跟进阶段">
+          <div class="list-tabs" aria-label="我的线索列表">
             <button class="list-tab active" type="button" data-action="switch-list-tab" data-scope="lead" data-tab="pending">
               待跟进 <span class="list-tab-count" id="leadPendingTabCount">0</span>
             </button>
             <button class="list-tab" type="button" data-action="switch-list-tab" data-scope="lead" data-tab="following">
               跟进中 <span class="list-tab-count" id="leadFollowingTabCount">0</span>
             </button>
+            <button class="list-tab" type="button" data-action="switch-list-tab" data-scope="lead" data-tab="converted">
+              已转商机 <span class="list-tab-count" id="leadConvertedTabCount">0</span>
+            </button>
           </div>
 
-          <section class="panel filter-panel">
+          <section class="panel filter-panel" id="leadFilterPanel">
             <div class="filter-head">
               <div class="filter-title">
                 <svg><use href="#i-filter"></use></svg>
@@ -3193,7 +3196,7 @@
             </form>
           </section>
 
-          <section class="panel table-panel">
+          <section class="panel table-panel" id="leadTablePanel">
             <div class="table-toolbar">
               <div class="selection-summary">
                 已选 <strong id="leadSelectedCount">0</strong> 条
@@ -3227,6 +3230,51 @@
               </div>
             </div>
           </section>
+
+          <div id="convertedLeadView" style="display:none">
+            <section class="panel filter-panel">
+              <div class="filter-head">
+                <div class="filter-title">
+                  <svg><use href="#i-filter"></use></svg>
+                  <span>筛选条件</span>
+                </div>
+                <span class="filter-summary">与商机列表一致，列表按创建时间倒序</span>
+              </div>
+              <div id="convertedFilterHost"></div>
+            </section>
+
+            <section class="panel table-panel">
+              <div class="table-toolbar">
+                <div class="selection-summary">
+                  已选 <strong id="convertedSelectedCount">0</strong> 条
+                </div>
+                <div class="table-actions">
+                  <span id="convertedColumnSummary" class="filter-summary"></span>
+                  <button class="icon-button" type="button" data-action="toggle-columns" data-scope="converted" data-tooltip="表头设置" aria-label="表头设置">
+                    <svg><use href="#i-settings"></use></svg>
+                  </button>
+                  <button class="btn small" type="button" data-action="export" data-scope="converted">
+                    <svg><use href="#i-download"></use></svg>
+                    导出
+                  </button>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table class="data-table" id="convertedTable">
+                  <thead id="convertedHead"></thead>
+                  <tbody id="convertedBody"></tbody>
+                </table>
+              </div>
+              <div class="table-footer">
+                <span id="convertedTotal">共 0 条</span>
+                <div class="pager">
+                  <button type="button" disabled aria-label="上一页"><svg><use href="#i-chevron-left"></use></svg></button>
+                  <button type="button" class="active">1</button>
+                  <button type="button" disabled aria-label="下一页"><svg><use href="#i-chevron-right"></use></svg></button>
+                </div>
+              </div>
+            </section>
+          </div>
         </section>
 
         <section class="page" id="page-opp" data-page="opp">
@@ -4070,17 +4118,20 @@
       sortStates: {
         sea: { key: "createdAt", direction: "desc" },
         lead: { key: "assignedAt", direction: "asc" },
-        opp: { key: "createdAt", direction: "desc" }
+        opp: { key: "createdAt", direction: "desc" },
+        converted: { key: "createdAt", direction: "desc" }
       },
       filters: {
         sea: {},
         lead: { tag: "" },
-        opp: {}
+        opp: {},
+        converted: {}
       },
       selection: {
         sea: new Set(),
         lead: new Set(),
-        opp: new Set()
+        opp: new Set(),
+        converted: new Set()
       },
       drawer: null,
       detailEdit: null,
@@ -4094,7 +4145,8 @@
       visibleColumns: {
         sea: new Set(seaColumns.map(column => column.key)),
         lead: new Set(leadColumns.map(column => column.key)),
-        opp: new Set(oppColumns.map(column => column.key))
+        opp: new Set(oppColumns.map(column => column.key)),
+        converted: new Set(oppColumns.map(column => column.key))
       }
     };
 
@@ -4335,16 +4387,48 @@
       return sortRows("opp", rows);
     }
 
+    function getConvertedBaseRows() {
+      return opportunities.filter(row => state.role === "manager" || row.sales === CURRENT_USER || row.creator === CURRENT_USER);
+    }
+
+    function getConvertedRows() {
+      const filters = state.filters.converted;
+      const rows = getConvertedBaseRows()
+        .filter(row => matchText(row.merchant, filters.merchant))
+        .filter(row => !filters.province || row.province === filters.province)
+        .filter(row => !filters.city || row.city === filters.city)
+        .filter(row => !filters.district || row.district === filters.district)
+        .filter(row => matchText(row.category, filters.category))
+        .filter(row => !filters.source || row.source === filters.source)
+        .filter(row => matchText(row.creator, filters.creator))
+        .filter(row => matchText(row.contact, filters.contact))
+        .filter(row => matchText([row.phone, ...(row.extraPhones || [])].join(" "), filters.phone))
+        .filter(row => !filters.sales || matchText(row.sales, filters.sales))
+        .filter(row => matchText(row.assignedBy, filters.assigner))
+        .filter(row => matchText(row.workOwner, filters.workOwner))
+        .filter(row => !filters.groupBuilt || row.groupBuilt === filters.groupBuilt)
+        .filter(row => !filters.intent || row.intent === filters.intent)
+        .filter(row => !filters.signed || row.signed === filters.signed)
+        .filter(row => !filters.status || row.status === filters.status)
+        .filter(row => !filters.tag || (row.tags || []).includes(filters.tag))
+        .filter(row => matchDate(row.createdAt, filters.startDate, filters.endDate))
+        .filter(row => matchDate(row.serviceOpenAt, filters.serviceStartDate, filters.serviceEndDate))
+        .filter(row => matchDate(getLatestFollowTime(row.id), filters.followStartDate, filters.followEndDate));
+      return sortRows("converted", rows);
+    }
+
     const columnSets = {
       sea: seaColumns,
       lead: leadColumns,
-      opp: oppColumns
+      opp: oppColumns,
+      converted: oppColumns
     };
 
     function getScopeRows(scope) {
       if (scope === "sea") return getSeaRows();
       if (scope === "lead") return getLeadRows();
-      return getOppRows();
+      if (scope === "opp") return getOppRows();
+      return getConvertedRows();
     }
 
     function isColumnAvailable(scope, column) {
@@ -4355,6 +4439,12 @@
         return false;
       }
       if (scope === "sea" && state.listTabs.sea === "pool" && column.key === "assignedBy") {
+        return false;
+      }
+      if (scope === "opp" && state.listTabs.opp === "pending" && ["serviceOpened", "serviceOpenAt"].includes(column.key)) {
+        return false;
+      }
+      if (scope === "opp" && state.listTabs.opp === "cooperating" && column.key === "serviceOpened") {
         return false;
       }
       return true;
@@ -4381,6 +4471,12 @@
             <button class="link-button" type="button" data-action="return-sea" data-id="${row.id}">退回公海</button>
             <span class="action-divider"></span>
             <button class="link-button" type="button" data-action="convert" data-id="${row.id}">转商机</button>
+          </div>`;
+      }
+      if (scope === "converted") {
+        return `
+          <div class="action-group">
+            <button class="link-button" type="button" data-action="open-opp-drawer" data-id="${row.id}">详情</button>
           </div>`;
       }
       return `
@@ -4426,7 +4522,7 @@
         case "workOwner":
           return escapeHtml(row.workOwner);
         case "source":
-          return scope === "opp" ? `<span class="tag-badge">${escapeHtml(row.source)}</span>` : sourceBadge(row.source);
+          return ["opp", "converted"].includes(scope) ? `<span class="tag-badge">${escapeHtml(row.source)}</span>` : sourceBadge(row.source);
         case "tags":
           return tagsHtml(row.tags);
         case "leadStatus":
@@ -4525,6 +4621,11 @@
       document.getElementById("oppColumnSummary").textContent = `显示 ${getVisibleColumns("opp").length} / ${oppColumns.length} 列`;
     }
 
+    function renderConvertedTable() {
+      renderConfigurableTable("converted");
+      document.getElementById("convertedColumnSummary").textContent = `显示 ${getVisibleColumns("converted").length} / ${oppColumns.length} 列`;
+    }
+
     function emptyRow(colspan) {
       return `
         <tr>
@@ -4542,6 +4643,7 @@
       renderSeaTable();
       renderLeadTable();
       renderOppTable();
+      renderConvertedTable();
     }
 
     function renderColumnPanel() {
@@ -4624,6 +4726,31 @@
       ["sea", "lead", "opp"].forEach(renderRegionFilters);
     }
 
+    function initConvertedLeadView() {
+      const host = document.getElementById("convertedFilterHost");
+      const source = document.getElementById("oppFilterForm");
+      if (!host || !source || host.dataset.ready === "true") return;
+      const clone = source.cloneNode(true);
+      clone.id = "convertedFilterForm";
+      clone.dataset.filterForm = "converted";
+      clone.classList.remove("expanded");
+      clone.querySelectorAll("[id]").forEach(element => {
+        element.id = element.id.replace(/^opp/, "converted");
+      });
+      clone.querySelectorAll("[data-filter-scope]").forEach(element => {
+        element.dataset.filterScope = "converted";
+      });
+      clone.querySelectorAll("[data-region-scope]").forEach(element => {
+        element.dataset.regionScope = "converted";
+      });
+      clone.querySelectorAll('[data-scope="opp"]').forEach(element => {
+        element.dataset.scope = "converted";
+      });
+      host.appendChild(clone);
+      host.dataset.ready = "true";
+      renderRegionFilters("converted");
+    }
+
     function selectRegion(scope, level, value) {
       state.filters[scope].province = state.filters[scope].province || "";
       state.filters[scope].city = state.filters[scope].city || "";
@@ -4655,6 +4782,7 @@
       const seaInvalidCount = leads.filter(row => row.status === "invalid").length;
       const leadPendingCount = leads.filter(row => row.status === "assigned" && getLeadStage(row) === "pending").length;
       const leadFollowingCount = leads.filter(row => row.status === "assigned" && getLeadStage(row) === "following").length;
+      const leadConvertedCount = getConvertedBaseRows().length;
       const oppCooperatingCount = opportunities.filter(row => row.serviceOpened === "已开通").length;
       const oppPendingCount = opportunities.filter(row => row.serviceOpened === "未开通").length;
 
@@ -4663,6 +4791,7 @@
       document.getElementById("seaInvalidTabCount").textContent = seaInvalidCount;
       document.getElementById("leadPendingTabCount").textContent = leadPendingCount;
       document.getElementById("leadFollowingTabCount").textContent = leadFollowingCount;
+      document.getElementById("leadConvertedTabCount").textContent = leadConvertedCount;
       document.getElementById("oppCooperatingTabCount").textContent = oppCooperatingCount;
       document.getElementById("oppPendingTabCount").textContent = oppPendingCount;
 
@@ -4690,6 +4819,18 @@
 
       const seaNewLeadButton = document.getElementById("seaNewLeadButton");
       if (seaNewLeadButton) seaNewLeadButton.style.display = state.listTabs.sea === "pool" ? "" : "none";
+
+      renderLeadTabView();
+    }
+
+    function renderLeadTabView() {
+      const showConverted = state.listTabs.lead === "converted";
+      const leadFilterPanel = document.getElementById("leadFilterPanel");
+      const leadTablePanel = document.getElementById("leadTablePanel");
+      const convertedLeadView = document.getElementById("convertedLeadView");
+      if (leadFilterPanel) leadFilterPanel.style.display = showConverted ? "none" : "";
+      if (leadTablePanel) leadTablePanel.style.display = showConverted ? "none" : "";
+      if (convertedLeadView) convertedLeadView.style.display = showConverted ? "" : "none";
     }
 
     function navigate(view) {
@@ -5677,7 +5818,7 @@
 
     function submitFilter(scope) {
       renderAll();
-      const count = scope === "sea" ? getSeaRows().length : scope === "lead" ? getLeadRows().length : getOppRows().length;
+      const count = getScopeRows(scope).length;
       toast(`查询完成，共 ${count} 条记录`);
     }
 
@@ -5706,7 +5847,7 @@
       ];
       const content = `\uFEFF${csvRows.map(row => row.join(",")).join("\r\n")}`;
       const link = document.createElement("a");
-      const fileNames = { sea: "线索公海", lead: "我的线索", opp: "商机列表" };
+      const fileNames = { sea: "线索公海", lead: "我的线索", opp: "商机列表", converted: "我的线索_已转商机" };
       link.download = `${fileNames[scope]}_${new Date().toISOString().slice(0, 10)}.csv`;
       let objectUrl = "";
       try {
@@ -5725,7 +5866,7 @@
 
     function resetFilters(scope, form) {
       state.filters[scope] = scope === "lead" ? { tag: "" } : {};
-      if (scope === "opp") {
+      if (scope === "opp" || scope === "converted") {
         form.classList.remove("expanded");
         const toggle = form.querySelector('[data-action="toggle-more-filters"]');
         if (toggle) {
@@ -6045,7 +6186,7 @@
     }
 
     function selectAll(scope, checked) {
-      const rows = scope === "sea" ? getSeaRows() : scope === "lead" ? getLeadRows() : getOppRows();
+      const rows = getScopeRows(scope);
       state.selection[scope] = new Set(checked ? rows.map(row => row.id) : []);
       renderAll();
     }
@@ -6067,6 +6208,7 @@
         document.querySelectorAll("[data-role]").forEach(button => button.classList.toggle("active", button.dataset.role === state.role));
         document.getElementById("sidebarRole").textContent = state.role === "manager" ? "电销主管" : "电销员";
         state.selection.lead.clear();
+        state.selection.converted.clear();
         renderAll();
         toast(state.role === "manager" ? "已切换至电销主管视角" : "已切换至电销员视角");
         return;
@@ -6514,6 +6656,7 @@
     });
 
     initRegionFilters();
+    initConvertedLeadView();
     renderAll();
   </script>
 </body>
