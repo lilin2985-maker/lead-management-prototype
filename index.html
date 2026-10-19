@@ -2533,20 +2533,6 @@
       border-radius: 6px;
     }
 
-    .role-switch-copy strong {
-      display: block;
-      color: var(--ink-2);
-      font-size: 11px;
-      font-weight: 650;
-    }
-
-    .role-switch-copy span {
-      display: block;
-      margin-top: 2px;
-      color: var(--muted);
-      font-size: 9px;
-    }
-
     .switch-control {
       position: relative;
       width: 38px;
@@ -3809,10 +3795,10 @@
     };
 
     const salesPeople = [
-      { name: "张三", region: "华东区域", team: "华东电销一组", load: "23 条跟进中" },
-      { name: "李四", region: "华东区域", team: "华东电销二组", load: "18 条跟进中" },
-      { name: "王芳", region: "华南区域", team: "华南电销一组", load: "16 条跟进中" },
-      { name: "陈晨", region: "华南区域", team: "华南电销二组", load: "21 条跟进中" }
+      { name: "张三", region: "华东区域", team: "华东电销一组", load: "23 条跟进中", status: "在职" },
+      { name: "李四", region: "华东区域", team: "华东电销二组", load: "18 条跟进中", status: "在职" },
+      { name: "王芳", region: "华南区域", team: "华南电销一组", load: "16 条跟进中", status: "在职" },
+      { name: "陈晨", region: "华南区域", team: "华南电销二组", load: "21 条跟进中", status: "离职" }
     ];
 
     const tagOptions = ["餐饮", "连锁", "高意向", "待回访", "零售", "一面未转化", "到期释放"];
@@ -5169,7 +5155,7 @@
       const opportunityCount = opportunities.filter(item => item.sales === name || item.creator === name).length;
       return {
         name,
-        status: person ? "启用" : "停用",
+        status: person?.status || "离职",
         team: person?.team || "--",
         leadCount,
         opportunityCount
@@ -5347,7 +5333,7 @@
         return `
           <div class="role-member-row">
             <span class="role-member-chip"><span class="role-member-avatar">${escapeHtml(name.slice(0, 1))}</span>${escapeHtml(name)}</span>
-            <span><span class="status-badge ${metrics.status === "启用" ? "status-assigned" : "status-invalid"}">${escapeHtml(metrics.status)}</span></span>
+            <span><span class="status-badge ${metrics.status === "在职" ? "status-assigned" : "status-pool"}">${escapeHtml(metrics.status)}</span></span>
             <span class="number">${metrics.leadCount}</span>
             <span class="number">${metrics.opportunityCount}</span>
             <span class="member-actions"><button class="link-button" type="button" data-action="remove-role-member" data-name="${escapeHtml(name)}">删除</button></span>
@@ -5358,7 +5344,7 @@
         <div class="role-member-row">
           <select data-action="select-role-member" aria-label="选择角色成员">
             <option value="">请选择人员</option>
-            ${availablePeople.map(person => `<option value="${escapeHtml(person.name)}">${escapeHtml(person.name)} · ${escapeHtml(person.team)}</option>`).join("")}
+            ${availablePeople.map(person => `<option value="${escapeHtml(person.name)}">${escapeHtml(person.name)} · ${escapeHtml(person.status)} · ${escapeHtml(person.team)}</option>`).join("")}
           </select>
           <span class="merchant-meta">待选择</span>
           <span class="number">--</span>
@@ -5379,6 +5365,10 @@
               <label class="required" for="roleFormName">角色名称</label>
               <input id="roleFormName" type="text" required value="${escapeHtml(draft.name)}" placeholder="请输入">
             </div>
+            <div class="field full">
+              <label for="roleFormDescription">角色说明</label>
+              <textarea id="roleFormDescription" placeholder="请输入角色说明">${escapeHtml(draft.description)}</textarea>
+            </div>
             <div class="field role-basic-field">
               <label for="roleFormSort">排序（数值越小越靠前）</label>
               <input id="roleFormSort" type="number" min="1" step="1" value="${Number(draft.sort)}" placeholder="请输入">
@@ -5392,16 +5382,11 @@
             <div class="field role-basic-field">
               <label>是否主键</label>
               <div class="role-switch-field">
-                <div class="role-switch-copy"><strong>${draft.isPrimary ? "已启用主键" : "未启用主键"}</strong><span>启用后作为当前角色的主键配置</span></div>
                 <label class="switch-control" aria-label="是否主键">
                   <input id="roleFormPrimary" type="checkbox" ${draft.isPrimary ? "checked" : ""}>
                   <span class="switch-track"></span>
                 </label>
               </div>
-            </div>
-            <div class="field full">
-              <label for="roleFormDescription">角色说明</label>
-              <textarea id="roleFormDescription" placeholder="请输入角色说明">${escapeHtml(draft.description)}</textarea>
             </div>
             <div class="field full">
               <label class="required">角色成员</label>
@@ -7185,11 +7170,6 @@
           state.modal.pendingMemberOpen = false;
           renderModal();
         }
-      }
-
-      if (event.target.id === "roleFormPrimary") {
-        const label = event.target.closest(".role-switch-field")?.querySelector(".role-switch-copy strong");
-        if (label) label.textContent = event.target.checked ? "已启用主键" : "未启用主键";
       }
 
       if (event.target.dataset.action === "follow-type-select") {
