@@ -2477,6 +2477,144 @@
       gap: 15px;
     }
 
+    .role-member-summary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .role-member-chip,
+    .role-primary-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 24px;
+      padding: 2px 7px;
+      color: var(--ink-2);
+      background: #f5f7fa;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .role-member-avatar {
+      width: 18px;
+      height: 18px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: #5577cc;
+      border-radius: 50%;
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .role-primary-chip {
+      color: var(--brand);
+      background: var(--brand-soft);
+      border-color: #c8d7ff;
+      font-weight: 650;
+    }
+
+    .role-member-editor {
+      padding: 12px;
+      background: #fafbfc;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+    }
+
+    .role-member-table {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .role-member-row {
+      min-height: 42px;
+      display: grid;
+      grid-template-columns: minmax(110px, 1.1fr) 86px 92px 92px 54px;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--line);
+      font-size: 10px;
+    }
+
+    .role-member-row:last-child { border-bottom: 0; }
+    .role-member-row.head { min-height: 34px; color: var(--muted); background: #f8fafc; font-weight: 650; }
+    .role-member-row .number { color: var(--ink-2); text-align: right; }
+    .role-member-row .member-actions { text-align: right; }
+    .role-member-row .link-button { color: var(--red); }
+
+    .role-member-empty {
+      padding: 24px 12px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 10px;
+    }
+
+    .role-member-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-top: 9px;
+    }
+
+    .member-picker {
+      margin-top: 9px;
+      padding: 11px;
+      background: #fff;
+      border: 1px solid #b9c9f1;
+      border-radius: 7px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .member-picker-search {
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    .member-picker-search svg {
+      position: absolute;
+      top: 50%;
+      left: 9px;
+      width: 14px;
+      height: 14px;
+      color: var(--muted-2);
+      transform: translateY(-50%);
+    }
+
+    .member-picker-search input { padding-left: 30px; }
+
+    .member-picker-list {
+      max-height: 210px;
+      display: grid;
+      gap: 5px;
+      overflow-y: auto;
+    }
+
+    .member-picker-option {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 9px;
+      background: #fafbfc;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .member-picker-option:hover { border-color: #b9c9f1; background: #f6f9ff; }
+    .member-picker-option input { width: 15px; min-height: 0; margin: 0; accent-color: var(--brand); }
+    .member-picker-copy { min-width: 0; flex: 1; }
+    .member-picker-copy strong { display: block; color: var(--ink-2); font-size: 10px; }
+    .member-picker-copy span { display: block; color: var(--muted); font-size: 9px; }
+    .member-picker-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 9px; }
+
     .required::before {
       margin-right: 4px;
       color: var(--red);
@@ -2735,6 +2873,13 @@
         grid-template-columns: 1fr;
       }
 
+      .role-member-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .role-member-row.head { display: none; }
+      .role-member-row .member-actions { text-align: left; }
+
       .modal-layer {
         align-items: flex-end;
         padding: 0;
@@ -2852,6 +2997,7 @@
           <div class="nav-children open" id="lineChildren">
             <button class="nav-child active" type="button" data-view="sea">线索公海</button>
             <button class="nav-child" type="button" data-view="lead">我的线索</button>
+            <button class="nav-child" type="button" data-view="roleConfig">代运营电销配置</button>
           </div>
           <button class="nav-item" type="button" data-view="opp">
             <svg><use href="#i-briefcase"></use></svg>
@@ -3278,6 +3424,80 @@
               </div>
             </section>
           </div>
+        </section>
+
+        <section class="page" id="page-roleConfig" data-page="roleConfig">
+          <div class="page-head">
+            <div>
+              <div class="eyebrow">SALES ROLE CONFIG</div>
+              <h1>代运营电销配置</h1>
+              <p>配置电销角色、成员归属和主责分配规则</p>
+            </div>
+          </div>
+
+          <section class="panel filter-panel">
+            <div class="filter-head">
+              <div class="filter-title">
+                <svg><use href="#i-filter"></use></svg>
+                <span>筛选条件</span>
+              </div>
+              <span class="filter-summary">角色按排序值升序展示</span>
+            </div>
+            <form class="filters" id="roleFilterForm">
+              <div class="field">
+                <label for="roleNameFilter">角色名称</label>
+                <div class="input-wrap">
+                  <svg><use href="#i-search"></use></svg>
+                  <input id="roleNameFilter" type="text" data-role-filter="name" placeholder="请输入角色名称">
+                </div>
+              </div>
+              <div class="filter-actions">
+                <button class="btn" type="button" data-action="reset-role-filter">重置</button>
+                <button class="btn primary" type="submit">
+                  <svg><use href="#i-search"></use></svg>
+                  查询
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel table-panel">
+            <div class="table-toolbar">
+              <div class="selection-summary">角色列表 <strong id="roleTotalCount">0</strong> 条</div>
+              <div class="table-actions">
+                <button class="btn small primary" type="button" data-action="new-role">
+                  <svg><use href="#i-plus"></use></svg>
+                  新增角色
+                </button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="roleTable" style="min-width:1320px">
+                <thead>
+                  <tr>
+                    <th style="width:70px">排序</th>
+                    <th style="width:150px">角色名称</th>
+                    <th style="width:300px">成员</th>
+                    <th style="width:240px">角色说明</th>
+                    <th style="width:130px">选择方式</th>
+                    <th style="width:90px">是否主键</th>
+                    <th style="width:150px">创建时间</th>
+                    <th style="width:150px">更新时间</th>
+                    <th style="width:120px">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="roleBody"></tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <span id="roleTotal">共 0 条</span>
+              <div class="pager">
+                <button type="button" disabled aria-label="上一页"><svg><use href="#i-chevron-left"></use></svg></button>
+                <button type="button" class="active">1</button>
+                <button type="button" disabled aria-label="下一页"><svg><use href="#i-chevron-right"></use></svg></button>
+              </div>
+            </div>
+          </section>
         </section>
 
         <section class="page" id="page-opp" data-page="opp">
@@ -3951,6 +4171,42 @@
       }
     ];
 
+    const roles = [
+      {
+        id: "ROLE001",
+        sort: 1,
+        name: "主责电销",
+        members: ["张三", "李四"],
+        description: "负责新线索首次联系、需求确认和商机转化",
+        selectionMode: "轮询分配",
+        isPrimary: true,
+        createdAt: "2026-09-18 10:20:00",
+        updatedAt: "2026-10-18 16:40:00"
+      },
+      {
+        id: "ROLE002",
+        sort: 2,
+        name: "区域电销",
+        members: ["王芳", "陈晨"],
+        description: "按商家所在区域承接线索并持续跟进",
+        selectionMode: "按区域分配",
+        isPrimary: false,
+        createdAt: "2026-09-22 14:10:00",
+        updatedAt: "2026-10-17 09:25:00"
+      },
+      {
+        id: "ROLE003",
+        sort: 3,
+        name: "协同跟单",
+        members: ["李四"],
+        description: "承接重点商户的协同跟进和商机推进",
+        selectionMode: "手动选择",
+        isPrimary: false,
+        createdAt: "2026-10-02 11:35:00",
+        updatedAt: "2026-10-16 18:05:00"
+      }
+    ];
+
     const followRecords = {
       "LD202610120001": [
         {
@@ -4143,6 +4399,7 @@
       followSearch: "",
       followMenu: null,
       modal: null,
+      roleFilter: "",
       columnPanelScope: null,
       regionPickerScope: null,
       visibleColumns: {
@@ -4156,6 +4413,7 @@
     const pageConfig = {
       sea: { title: "线索公海", nav: "sea" },
       lead: { title: "我的线索", nav: "lead" },
+      roleConfig: { title: "代运营电销配置", nav: "roleConfig" },
       opp: { title: "商机列表", nav: "opp" }
     };
 
@@ -4836,6 +5094,49 @@
       if (convertedLeadView) convertedLeadView.style.display = showConverted ? "" : "none";
     }
 
+    function getRoleMemberMetrics(name) {
+      const person = salesPeople.find(item => item.name === name);
+      const leadCount = leads.filter(item => item.status === "assigned" && item.sales === name).length;
+      const opportunityCount = opportunities.filter(item => item.sales === name || item.creator === name).length;
+      return {
+        name,
+        status: person ? "启用" : "停用",
+        team: person?.team || "--",
+        leadCount,
+        opportunityCount
+      };
+    }
+
+    function roleMembersHtml(members) {
+      if (!members?.length) return `<span class="merchant-meta">暂无成员</span>`;
+      return `<div class="role-member-summary">${members.map(name => `
+        <span class="role-member-chip"><span class="role-member-avatar">${escapeHtml(name.slice(0, 1))}</span>${escapeHtml(name)}</span>`).join("")}</div>`;
+    }
+
+    function renderRoles() {
+      const keyword = state.roleFilter.trim().toLowerCase();
+      const rows = [...roles]
+        .filter(role => !keyword || role.name.toLowerCase().includes(keyword))
+        .sort((left, right) => Number(left.sort) - Number(right.sort));
+      const body = document.getElementById("roleBody");
+      if (!body) return;
+      body.innerHTML = rows.length ? rows.map(role => `
+        <tr>
+          <td><span class="number">${Number(role.sort)}</span></td>
+          <td><span class="cell-main">${escapeHtml(role.name)}</span></td>
+          <td>${roleMembersHtml(role.members)}</td>
+          <td><span title="${escapeHtml(role.description)}">${escapeHtml(role.description || "--")}</span></td>
+          <td><span class="tag-badge">${escapeHtml(role.selectionMode)}</span></td>
+          <td>${role.isPrimary ? `<span class="status-badge status-assigned">是</span>` : `<span class="status-badge status-invalid">否</span>`}</td>
+          <td class="mono">${escapeHtml(role.createdAt)}</td>
+          <td class="mono">${escapeHtml(role.updatedAt)}</td>
+          <td><div class="action-group"><button class="link-button" type="button" data-action="edit-role" data-id="${role.id}">编辑</button><span class="action-divider"></span><button class="link-button" type="button" data-action="delete-role" data-id="${role.id}" style="color:var(--red)">删除</button></div></td>
+        </tr>`).join("") : `
+        <tr><td colspan="9"><div class="empty-state"><div><strong>暂无匹配角色</strong><span>调整筛选条件后重试</span></div></div></td></tr>`;
+      document.getElementById("roleTotal").textContent = `共 ${rows.length} 条`;
+      document.getElementById("roleTotalCount").textContent = rows.length;
+    }
+
     function navigate(view) {
       state.view = view;
       state.columnPanelScope = null;
@@ -4852,6 +5153,7 @@
       renderTables();
       renderColumnPanel();
       renderListTabs();
+      renderRoles();
       document.getElementById("leadPageSubtitle").textContent = state.role === "manager"
         ? "电销主管可查看并调整团队线索"
         : "当前仅展示分配给张三的线索";
@@ -4939,6 +5241,165 @@
       if (drawerId === editedId && state.drawer?.type === editedEntity) renderDrawer();
     }
 
+    function openRoleModal(mode = "create", id = "") {
+      const role = roles.find(item => item.id === id);
+      state.modal = {
+        type: "role",
+        mode,
+        id,
+        memberPickerOpen: false,
+        candidateSelection: new Set(),
+        memberSearch: "",
+        draft: {
+          name: role?.name || "",
+          sort: role?.sort || 1,
+          members: [...(role?.members || [])],
+          description: role?.description || "",
+          selectionMode: role?.selectionMode || "轮询分配",
+          isPrimary: Boolean(role?.isPrimary)
+        }
+      };
+      renderModal();
+    }
+
+    function syncRoleDraftFromForm() {
+      if (state.modal?.type !== "role") return;
+      const draft = state.modal.draft;
+      draft.name = document.getElementById("roleFormName")?.value.trim() || "";
+      draft.sort = Number(document.getElementById("roleFormSort")?.value) || 1;
+      draft.selectionMode = document.getElementById("roleFormSelectionMode")?.value || "轮询分配";
+      draft.isPrimary = document.getElementById("roleFormPrimary")?.value === "是";
+      draft.description = document.getElementById("roleFormDescription")?.value.trim() || "";
+    }
+
+    function roleMemberRowsHtml(members) {
+      if (!members.length) return `<div class="role-member-empty">暂未添加角色成员</div>`;
+      return members.map(name => {
+        const metrics = getRoleMemberMetrics(name);
+        return `
+          <div class="role-member-row">
+            <span class="role-member-chip"><span class="role-member-avatar">${escapeHtml(name.slice(0, 1))}</span>${escapeHtml(name)}</span>
+            <span><span class="status-badge ${metrics.status === "启用" ? "status-assigned" : "status-invalid"}">${escapeHtml(metrics.status)}</span></span>
+            <span class="number">${metrics.leadCount}</span>
+            <span class="number">${metrics.opportunityCount}</span>
+            <span class="member-actions"><button class="link-button" type="button" data-action="remove-role-member" data-name="${escapeHtml(name)}">删除</button></span>
+          </div>`;
+      }).join("");
+    }
+
+    function renderRoleModal(root) {
+      const { mode, draft, memberPickerOpen, candidateSelection, memberSearch } = state.modal;
+      const availablePeople = salesPeople.filter(person => !draft.members.includes(person.name));
+      const pickerHtml = memberPickerOpen ? `
+        <div class="member-picker" id="roleMemberPicker">
+          <div class="member-picker-search">
+            <svg><use href="#i-search"></use></svg>
+            <input type="text" data-action="role-member-search" value="${escapeHtml(memberSearch || "")}" placeholder="搜索姓名、区域或团队">
+          </div>
+          <div class="member-picker-list">
+            ${availablePeople.length ? availablePeople.map(person => `
+              <label class="member-picker-option" data-role-member-search="${escapeHtml(`${person.name} ${person.region} ${person.team}`)}">
+                <input type="checkbox" value="${escapeHtml(person.name)}" ${candidateSelection.has(person.name) ? "checked" : ""}>
+                <span class="member-picker-copy"><strong>${escapeHtml(person.name)}</strong><span>${escapeHtml(person.region)} · ${escapeHtml(person.team)} · ${escapeHtml(person.load)}</span></span>
+              </label>`).join("") : `<div class="role-member-empty">全部人员已添加</div>`}
+          </div>
+          <div class="member-picker-actions">
+            <button class="btn small" type="button" data-action="cancel-role-member-picker">取消</button>
+            <button class="btn small primary" type="button" data-action="confirm-role-member-picker">确定添加</button>
+          </div>
+        </div>` : "";
+      root.innerHTML = modalShell({
+        title: mode === "edit" ? "编辑角色" : "新增角色",
+        size: "wide",
+        body: `
+          <form id="roleForm" class="form-grid">
+            <div class="field">
+              <label class="required" for="roleFormName">角色名称</label>
+              <input id="roleFormName" required value="${escapeHtml(draft.name)}" placeholder="请输入角色名称">
+            </div>
+            <div class="field">
+              <label for="roleFormSort">排序</label>
+              <input id="roleFormSort" type="number" min="1" step="1" value="${Number(draft.sort)}" placeholder="请输入">
+              <div class="field-note">数值越小越靠前，默认为 1</div>
+            </div>
+            <div class="field">
+              <label for="roleFormSelectionMode">选择方式</label>
+              <select id="roleFormSelectionMode">${["轮询分配", "按区域分配", "手动选择", "指定负责人"].map(item => `<option ${draft.selectionMode === item ? "selected" : ""}>${item}</option>`).join("")}</select>
+            </div>
+            <div class="field">
+              <label for="roleFormPrimary">是否主键</label>
+              <select id="roleFormPrimary"><option value="否" ${!draft.isPrimary ? "selected" : ""}>否</option><option value="是" ${draft.isPrimary ? "selected" : ""}>是</option></select>
+            </div>
+            <div class="field full">
+              <label for="roleFormDescription">角色说明</label>
+              <textarea id="roleFormDescription" placeholder="请输入角色说明">${escapeHtml(draft.description)}</textarea>
+            </div>
+            <div class="field full">
+              <label class="required">角色成员</label>
+              <div class="role-member-editor">
+                <div class="role-member-table">
+                  <div class="role-member-row head"><span>成员</span><span>状态</span><span style="text-align:right">线索数量</span><span style="text-align:right">商机数量</span><span style="text-align:right">操作</span></div>
+                  ${roleMemberRowsHtml(draft.members)}
+                </div>
+                <div class="role-member-footer">
+                  <button class="btn small" type="button" data-action="add-role-member"><svg><use href="#i-plus"></use></svg>添加成员</button>
+                </div>
+                ${pickerHtml}
+              </div>
+            </div>
+          </form>`,
+        footer: `<button class="btn" type="button" data-action="close-modal">取消</button><button class="btn primary" type="submit" form="roleForm">${mode === "edit" ? "保存修改" : "确认新增"}</button>`
+      });
+      if (memberPickerOpen) {
+        setTimeout(() => document.querySelector('[data-action="role-member-search"]')?.focus(), 0);
+      }
+    }
+
+    function submitRoleForm(form) {
+      syncRoleDraftFromForm();
+      const draft = state.modal?.draft;
+      if (!draft || !draft.name) {
+        form.reportValidity();
+        return;
+      }
+      if (!Number.isFinite(draft.sort) || draft.sort < 1) {
+        toast("排序必须为大于等于 1 的数字");
+        return;
+      }
+      if (!draft.members.length) {
+        toast("请至少添加一名角色成员");
+        return;
+      }
+      const wasEdit = state.modal.mode === "edit";
+      if (draft.isPrimary) roles.forEach(role => { role.isPrimary = false; });
+      const now = "2026-10-19 16:20:00";
+      if (wasEdit) {
+        const role = roles.find(item => item.id === state.modal.id);
+        if (role) Object.assign(role, draft, { updatedAt: now });
+      } else {
+        roles.push({
+          id: `ROLE${String(roles.length + 1).padStart(3, "0")}`,
+          ...draft,
+          createdAt: now,
+          updatedAt: now
+        });
+      }
+      closeModal();
+      renderRoles();
+      navigate("roleConfig");
+      toast(wasEdit ? "角色配置已更新" : "角色已新增");
+    }
+
+    function renderDeleteRoleModal(root) {
+      const role = roles.find(item => item.id === state.modal?.id);
+      root.innerHTML = modalShell({
+        title: "删除角色",
+        size: "small",
+        body: `<p class="confirm-copy">是否确认删除角色 <strong>【${escapeHtml(role?.name || "")}】</strong>？删除后不会影响历史线索和商机数据。</p>`,
+        footer: `<button class="btn" type="button" data-action="close-modal">取消</button><button class="btn danger" type="button" data-action="confirm-delete-role">删除</button>`
+      });
+    }
+
     function renderModal() {
       const root = document.getElementById("modalRoot");
       if (!state.modal) {
@@ -4949,6 +5410,16 @@
 
       root.classList.add("open");
       const { type } = state.modal;
+
+      if (type === "role") {
+        renderRoleModal(root);
+        return;
+      }
+
+      if (type === "delete-role") {
+        renderDeleteRoleModal(root);
+        return;
+      }
 
       if (type === "edit") {
         const isOpportunity = state.modal.entity === "opp";
@@ -6297,6 +6768,53 @@
         document.getElementById("sidebar").classList.remove("open");
         document.getElementById("mobileScrim").classList.remove("open");
       }
+      if (action === "new-role") openRoleModal();
+      if (action === "edit-role") openRoleModal("edit", actionTarget.dataset.id);
+      if (action === "delete-role") openModal("delete-role", { id: actionTarget.dataset.id });
+      if (action === "confirm-delete-role") {
+        const roleId = state.modal?.id;
+        const role = roles.find(item => item.id === roleId);
+        const roleIndex = roles.findIndex(item => item.id === roleId);
+        if (roleIndex >= 0) roles.splice(roleIndex, 1);
+        closeModal();
+        renderRoles();
+        toast(`角色【${role?.name || ""}】已删除`);
+      }
+      if (action === "add-role-member") {
+        syncRoleDraftFromForm();
+        state.modal.memberPickerOpen = true;
+        state.modal.candidateSelection = new Set();
+        state.modal.memberSearch = "";
+        renderModal();
+      }
+      if (action === "cancel-role-member-picker") {
+        syncRoleDraftFromForm();
+        state.modal.memberPickerOpen = false;
+        renderModal();
+      }
+      if (action === "confirm-role-member-picker") {
+        syncRoleDraftFromForm();
+        const selected = [...document.querySelectorAll("#roleMemberPicker input[type=checkbox]:checked")].map(input => input.value);
+        if (!selected.length) {
+          toast("请选择需要添加的成员");
+        } else {
+          state.modal.draft.members = [...new Set([...state.modal.draft.members, ...selected])];
+          state.modal.memberPickerOpen = false;
+          renderModal();
+        }
+      }
+      if (action === "remove-role-member") {
+        syncRoleDraftFromForm();
+        state.modal.draft.members = state.modal.draft.members.filter(name => name !== actionTarget.dataset.name);
+        renderModal();
+      }
+      if (action === "reset-role-filter") {
+        state.roleFilter = "";
+        const input = document.getElementById("roleNameFilter");
+        if (input) input.value = "";
+        renderRoles();
+        toast("角色筛选已重置");
+      }
       if (action === "copy-phone") {
         try {
           await navigator.clipboard.writeText(actionTarget.dataset.phone);
@@ -6586,6 +7104,19 @@
       const key = event.target.dataset.filterKey;
       if (scope && key) state.filters[scope][key] = event.target.value;
 
+      if (event.target.dataset.roleFilter === "name") {
+        state.roleFilter = event.target.value;
+        renderRoles();
+      }
+
+      if (event.target.dataset.action === "role-member-search") {
+        const keyword = event.target.value.trim().toLowerCase();
+        state.modal.memberSearch = event.target.value;
+        document.querySelectorAll("[data-role-member-search]").forEach(option => {
+          option.style.display = option.dataset.roleMemberSearch.toLowerCase().includes(keyword) ? "" : "none";
+        });
+      }
+
       if (event.target.matches("#followContent")) {
         const count = event.target.value.length;
         const counter = document.getElementById("followCounter");
@@ -6630,6 +7161,17 @@
 
     document.addEventListener("submit", event => {
       event.preventDefault();
+      if (event.target.id === "roleFilterForm") {
+        renderRoles();
+        const keyword = state.roleFilter.trim().toLowerCase();
+        const roleCount = roles.filter(role => !keyword || role.name.toLowerCase().includes(keyword)).length;
+        toast(`查询完成，共 ${roleCount} 个角色`);
+        return;
+      }
+      if (event.target.id === "roleForm") {
+        submitRoleForm(event.target);
+        return;
+      }
       const scope = event.target.dataset.filterForm;
       if (scope) {
         submitFilter(scope);
