@@ -3040,7 +3040,6 @@
           <div class="nav-children open" id="lineChildren">
             <button class="nav-child active" type="button" data-view="sea">线索公海</button>
             <button class="nav-child" type="button" data-view="lead">我的线索</button>
-            <button class="nav-child" type="button" data-view="roleConfig">代运营电销配置</button>
           </div>
           <button class="nav-item" type="button" data-view="opp">
             <svg><use href="#i-briefcase"></use></svg>
@@ -3283,9 +3282,6 @@
             </button>
             <button class="list-tab" type="button" data-action="switch-list-tab" data-scope="lead" data-tab="following">
               跟进中 <span class="list-tab-count" id="leadFollowingTabCount">0</span>
-            </button>
-            <button class="list-tab" type="button" data-action="switch-list-tab" data-scope="lead" data-tab="converted">
-              已转商机 <span class="list-tab-count" id="leadConvertedTabCount">0</span>
             </button>
           </div>
 
@@ -5098,7 +5094,6 @@
       const seaInvalidCount = leads.filter(row => row.status === "invalid").length;
       const leadPendingCount = leads.filter(row => row.status === "assigned" && getLeadStage(row) === "pending").length;
       const leadFollowingCount = leads.filter(row => row.status === "assigned" && getLeadStage(row) === "following").length;
-      const leadConvertedCount = getConvertedBaseRows().length;
       const oppCooperatingCount = opportunities.filter(row => row.serviceOpened === "已开通").length;
       const oppPendingCount = opportunities.filter(row => row.serviceOpened === "未开通").length;
 
@@ -5107,7 +5102,6 @@
       document.getElementById("seaInvalidTabCount").textContent = seaInvalidCount;
       document.getElementById("leadPendingTabCount").textContent = leadPendingCount;
       document.getElementById("leadFollowingTabCount").textContent = leadFollowingCount;
-      document.getElementById("leadConvertedTabCount").textContent = leadConvertedCount;
       document.getElementById("oppCooperatingTabCount").textContent = oppCooperatingCount;
       document.getElementById("oppPendingTabCount").textContent = oppPendingCount;
 
